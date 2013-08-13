@@ -1,0 +1,6 @@
+project commoncpp
+;
+
+lib log4cplus : : <name>log4cplus ;
+
+exe imageHasher : src/main/ImageHasher.cpp log4cplus ;
