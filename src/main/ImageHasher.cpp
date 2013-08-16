@@ -11,6 +11,9 @@
 
 #include <boost/filesystem.hpp>
 
+#include "../include/ImageFinder.hpp"
+
+
 using namespace log4cplus;
 using namespace boost::filesystem;
 
@@ -25,6 +28,8 @@ int main(int argc, char* argv[]) {
 	 logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
 
 	 path path = getPath(argv);
+	 ImageFinder imgF;
+	 imgF.getImages(path);
 }
 
 path getPath(char* argv[]) {
