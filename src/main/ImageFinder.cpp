@@ -25,7 +25,7 @@ std::list<boost::filesystem::path> ImageFinder::getImages(boost::filesystem::pat
 	for ( boost::filesystem::recursive_directory_iterator endIter, dirIter(dirPath); dirIter != endIter; ++dirIter ) {
 		if(is_regular_file(dirIter->status())){
 			if(isImageExtension(dirIter->path().extension())){
-				std::cout << *dirIter << std::endl;
+				imagePaths.push_back(dirIter->path());
 			}
 		}
 	}

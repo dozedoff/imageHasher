@@ -27,9 +27,13 @@ int main(int argc, char* argv[]) {
 	 config.configure();
 	 logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
 
-	 path path = getPath(argv);
+	 path searchPath = getPath(argv);
 	 ImageFinder imgF;
-	 imgF.getImages(path);
+	 std::list<path> imagePaths = imgF.getImages(searchPath);
+
+	 for(std::list<path>::iterator itr = imagePaths.begin(); itr != imagePaths.end(); ++itr) {
+		LOG4CPLUS_INFO(logger, *itr);
+	 }
 }
 
 path getPath(char* argv[]) {
