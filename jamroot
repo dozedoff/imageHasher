@@ -1,6 +1,8 @@
 project imageHasher
 ;
 
+build-project commoncpp ;
+
 lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
 lib boost-sys : : <name>boost_system ;

@@ -1,0 +1,3 @@
+[submodule "commoncpp"]
+	path = commoncpp
+	url = git@github.com:dozedoff/commoncpp.git
