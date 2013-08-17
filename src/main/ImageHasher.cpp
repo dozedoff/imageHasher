@@ -11,8 +11,10 @@
 
 #include <boost/filesystem.hpp>
 
-#include "../include/ImageFinder.hpp"
+#include <string>
 
+#include "../include/ImageFinder.hpp"
+#include "../../commoncpp/src/include/hash/ImagePHash.hpp"
 
 using namespace log4cplus;
 using namespace boost::filesystem;
@@ -23,29 +25,35 @@ Logger logger;
 path getPath(char**);
 
 int main(int argc, char* argv[]) {
-	 BasicConfigurator config;
-	 config.configure();
-	 logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
+	ImageFinder imgF;
+	ImagePHash iph;
+	long long pHash = 0;
 
-	 path searchPath = getPath(argv);
-	 ImageFinder imgF;
-	 std::list<path> imagePaths = imgF.getImages(searchPath);
+	PropertyConfigurator config("logs.properties");
+	config.configure();
+	logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
 
-	 for(std::list<path>::iterator itr = imagePaths.begin(); itr != imagePaths.end(); ++itr) {
-		LOG4CPLUS_INFO(logger, *itr);
-	 }
+	path searchPath = getPath(argv);
+
+	std::list<path> imagePaths = imgF.getImages(searchPath);
+
+	for (std::list<path>::iterator itr = imagePaths.begin(); itr != imagePaths.end(); ++itr) {
+		std::string filepath = itr->string();
+		pHash = iph.getLongHash(filepath);
+		LOG4CPLUS_INFO(logger, pHash << " - " << *itr);
+	}
 }
 
 path getPath(char* argv[]) {
-	 path path;
+	path path;
 
-	 if(NULL == argv[1]) {
-		 path = boost::filesystem::current_path();
-		 LOG4CPLUS_INFO(logger, "No search path given, using current directory " << path);
-	 }else{
+	if (NULL == argv[1]) {
+		path = boost::filesystem::current_path();
+		LOG4CPLUS_INFO(logger, "No search path given, using current directory " << path);
+	} else {
 		path = boost::filesystem::path(argv[1]);
 		LOG4CPLUS_INFO(logger, "Search path is " << path);
-	 }
+	}
 
 	return path;
 }

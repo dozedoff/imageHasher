@@ -7,4 +7,4 @@ lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
 lib boost-sys : : <name>boost_system ;
 
-exe imageHasher : src/main/ImageHasher.cpp src/main/ImageFinder.cpp log4cplus boost-fs boost-sys ;
+exe imageHasher : src/main/ImageHasher.cpp src/main/ImageFinder.cpp log4cplus boost-fs boost-sys commoncpp ;
