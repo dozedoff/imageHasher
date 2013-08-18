@@ -29,7 +29,7 @@ path getPath(char**);
 
 int main(int argc, char* argv[]) {
 	ImageFinder imgF;
-	ImagePHash iph;
+	ImagePHash iph(32,9);
 	long long pHash = 0;
 
 	PropertyConfigurator config("logs.properties");
