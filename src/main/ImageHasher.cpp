@@ -11,6 +11,9 @@
 
 #include <boost/filesystem.hpp>
 
+#include <GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++/Exception.h>
+
 #include <string>
 
 #include "../include/ImageFinder.hpp"
@@ -38,9 +41,15 @@ int main(int argc, char* argv[]) {
 	std::list<path> imagePaths = imgF.getImages(searchPath);
 
 	for (std::list<path>::iterator itr = imagePaths.begin(); itr != imagePaths.end(); ++itr) {
-		std::string filepath = itr->string();
-		pHash = iph.getLongHash(filepath);
-		LOG4CPLUS_INFO(logger, pHash << " - " << *itr);
+		std::string filepath;
+
+		try {
+			filepath = itr->string();
+			pHash = iph.getLongHash(filepath);
+			LOG4CPLUS_INFO(logger, pHash << " - " << *itr);
+		} catch (Magick::Exception &e) {
+			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
+		}
 	}
 }
 

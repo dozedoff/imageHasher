@@ -1,4 +1,6 @@
 project imageHasher
+: requirements 
+    <include>/usr/include/GraphicsMagick/
 ;
 
 build-project commoncpp ;
