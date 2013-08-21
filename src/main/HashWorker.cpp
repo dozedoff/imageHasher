@@ -24,6 +24,9 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 }
 
 void HashWorker::start() {
+	LOG4CPLUS_INFO(logger, "Setting up SQLite database");
+	db.init();
+
 	boost::thread_group tg;
 
 	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
