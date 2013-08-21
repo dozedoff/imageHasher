@@ -59,7 +59,7 @@ void HashWorker::doWork() {
 	while (!imagePaths.empty()) {
 		path image = getWork();
 
-		if (image == NULL) {break;}
+		if (image.empty() || !boost::filesystem::exists(image)) {break;}
 
 		try {
 			filepath = image.string();
