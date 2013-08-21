@@ -23,11 +23,6 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashWorker"));
 }
 
-void HashWorker::derp(int workerNo) {
-	Logger workerLogger = Logger::getInstance(LOG4CPLUS_TEXT("Worker Thread "+ workerNo));
-	LOG4CPLUS_INFO(workerLogger, "derp derp");
-}
-
 void HashWorker::start() {
 	boost::thread_group tg;
 
