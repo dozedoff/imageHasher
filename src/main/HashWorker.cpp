@@ -34,7 +34,7 @@ void HashWorker::start() {
 	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
 
 	for(int i = 0; i < numOfWorkers; i++) {
-		boost::thread *t = new boost::thread(&HashWorker::derp, i);
+		boost::thread *t = new boost::thread(&HashWorker::doWork, this);
 		tg.add_thread(t);
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
