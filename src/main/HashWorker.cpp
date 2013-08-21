@@ -1,0 +1,77 @@
+/*
+ * HashWorker.cpp
+ *
+ *  Created on: 20 Aug 2013
+ *      Author: nicholas
+ */
+
+#include "../include/HashWorker.hpp"
+#include "../../commoncpp/src/include/commoncpp.hpp"
+
+#include <GraphicsMagick/Magick++.h>
+#include <GraphicsMagick/Magick++/Exception.h>
+
+using std::list;
+
+HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorkers(numOfWorkers), imagePaths(*imagePaths) {
+	if (numOfWorkers > 0) {
+
+	} else {
+		throw "Number of  workers must be greater than 0";
+	}
+
+	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashWorker"));
+}
+
+void HashWorker::derp(int workerNo) {
+	Logger workerLogger = Logger::getInstance(LOG4CPLUS_TEXT("Worker Thread "+ workerNo));
+	LOG4CPLUS_INFO(workerLogger, "derp derp");
+}
+
+void HashWorker::start() {
+	boost::thread_group tg;
+
+	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
+
+	for(int i = 0; i < numOfWorkers; i++) {
+		boost::thread *t = new boost::thread(&HashWorker::derp, i);
+		tg.add_thread(t);
+		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
+	}
+
+	tg.join_all();
+
+	LOG4CPLUS_INFO(logger, "All worker thread(s) have terminated");
+}
+
+path HashWorker::getWork() {
+	boost::mutex::scoped_lock(workQueueMutex);
+
+	if (!imagePaths.empty()) {
+		path next = imagePaths.back();
+		imagePaths.pop_back();
+		return next;
+	} else {
+		return NULL;
+	}
+}
+
+void HashWorker::doWork() {
+	ImagePHash iph(32, 9);
+	int64_t pHash = 0;
+	std::string filepath;
+
+	while (!imagePaths.empty()) {
+		path image = getWork();
+
+		if (image == NULL) {break;}
+
+		try {
+			filepath = image.string();
+			pHash = iph.getLongHash(filepath);
+			LOG4CPLUS_INFO(logger, pHash << " - " << image);
+		} catch (Magick::Exception &e) {
+			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
+		}
+	}
+}

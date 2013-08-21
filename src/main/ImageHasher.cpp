@@ -17,6 +17,7 @@
 #include <string>
 
 #include "../include/ImageFinder.hpp"
+#include "../include/HashWorker.hpp"
 #include "../../commoncpp/src/include/hash/ImagePHash.hpp"
 
 using namespace log4cplus;
@@ -30,27 +31,22 @@ path getPath(char**);
 int main(int argc, char* argv[]) {
 	ImageFinder imgF;
 	ImagePHash iph(32,9);
-	long long pHash = 0;
+	long imageCount = 0;
 
 	PropertyConfigurator config("logs.properties");
 	config.configure();
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
 
 	path searchPath = getPath(argv);
-
 	std::list<path> imagePaths = imgF.getImages(searchPath);
 
-	for (std::list<path>::iterator itr = imagePaths.begin(); itr != imagePaths.end(); ++itr) {
-		std::string filepath;
+	imageCount = imagePaths.size();
+	LOG4CPLUS_INFO(logger, "Found " << imageCount << " images in " << searchPath);
 
-		try {
-			filepath = itr->string();
-			pHash = iph.getLongHash(filepath);
-			LOG4CPLUS_INFO(logger, pHash << " - " << *itr);
-		} catch (Magick::Exception &e) {
-			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
-		}
-	}
+	HashWorker hw(&imagePaths,4);
+	LOG4CPLUS_INFO(logger, "Starting hashing of images...");
+	hw.start();
+	LOG4CPLUS_INFO(logger, "Processed " << imageCount << " images");
 }
 
 path getPath(char* argv[]) {
