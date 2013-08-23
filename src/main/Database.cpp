@@ -13,8 +13,8 @@ const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUE
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
-const char *startTransactionQuery = "START TRANSACTION";
-const char *commitTransactionQuery = "COMMIT TRANSACTION";
+const char *startTransactionQuery = "BEGIN TRANSACTION;";
+const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
 Database::Database() {
 	this->currentList = &dataA;
@@ -38,12 +38,13 @@ void Database::shutdown() {
 	workerThread->join();
 }
 
-int Database::callback(void *NotUsed, int argc, char **argv, char **arg2){
-   return 0;
-}
+void Database::exec(const char* command) {
+	sqlite3_exec(db, command, NULL, NULL, &errMsg);
 
-void Database::exec(char* command) {
-	sqlite3_exec(db, command, callback, NULL, &errMsg);
+	if(errMsg != NULL) {
+		LOG4CPLUS_WARN(logger, "Exec failed: " << command << " -> " << errMsg);
+		sqlite3_free(errMsg);
+	}
 }
 
 void Database::init() {
@@ -90,8 +91,9 @@ void Database::drain() {
 	sqlite3_reset(startTrStmt);
 
 	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to start transaction");
+		LOG4CPLUS_WARN(logger, "Failed to start transaction: " << sqlite3_errstr(response));
 	}
+
 
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
@@ -102,7 +104,7 @@ void Database::drain() {
 	sqlite3_reset(commitTrStmt);
 
 	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to commit transaction");
+		LOG4CPLUS_WARN(logger, "Failed to commit transaction: " << sqlite3_errstr(response));
 	}
 
 	workList->clear();
@@ -155,9 +157,11 @@ void Database::doWork() {
 	while(running) {
 		boost::this_thread::sleep_for(boost::chrono::seconds(3));
 
-		if(currentList->size() > 100) {
+		if(currentList->size() > 10) {
 			drain();
 		}
+
+		LOG4CPLUS_INFO(logger, recordsWritten << " records processed");
 	}
 
 	// make sure both lists are committed

@@ -68,7 +68,7 @@ void HashWorker::doWork() {
 			pHash = iph.getLongHash(filepath);
 			data.pHash = pHash;
 			data.status = Database::OK;
-			LOG4CPLUS_INFO(logger, pHash << " - " << image);
+			LOG4CPLUS_DEBUG(logger, pHash << " - " << image);
 			db.add(data);
 		} catch (Magick::Exception &e) {
 			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());

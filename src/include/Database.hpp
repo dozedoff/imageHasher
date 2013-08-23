@@ -46,7 +46,7 @@ private:
 	boost::thread *workerThread;
 
 	void init();
-	void exec(char*);
+	void exec(const char*);
 	void drain();
 	void flipLists();
 	void doWork();
