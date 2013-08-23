@@ -24,9 +24,6 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 }
 
 void HashWorker::start() {
-	LOG4CPLUS_INFO(logger, "Setting up SQLite database");
-	db.init();
-
 	boost::thread_group tg;
 
 	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
@@ -58,6 +55,7 @@ void HashWorker::doWork() {
 	ImagePHash iph(32, 9);
 	int64_t pHash = 0;
 	std::string filepath;
+	Database::db_data data;
 
 	while (!imagePaths.empty()) {
 		path image = getWork();
@@ -66,8 +64,12 @@ void HashWorker::doWork() {
 
 		try {
 			filepath = image.string();
+			data = Database::db_data(image);
 			pHash = iph.getLongHash(filepath);
+			data.pHash = pHash;
+			data.status = Database::OK;
 			LOG4CPLUS_INFO(logger, pHash << " - " << image);
+			db.add(data);
 		} catch (Magick::Exception &e) {
 			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
 		}

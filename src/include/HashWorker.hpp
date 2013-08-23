@@ -36,7 +36,6 @@ private:
 	std::vector<pathList> splitWork(void);
 	void doWork(void);
 	path getWork();
-	static void derp(int);
 };
 
 #endif /* HASHWORKER_H_ */

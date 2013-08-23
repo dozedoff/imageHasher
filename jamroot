@@ -7,6 +7,7 @@ lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
 lib boost-sys : : <name>boost_system ;
 lib boost-thread : : <name>boost_thread ;
+lib boost-chrono : : <name>boost_chrono ;
 lib sqlite3 : : <name>sqlite3 ;
 
-exe imageHasher : src/main/ImageHasher.cpp src/main/ImageFinder.cpp src/main/HashWorker.cpp src/main/Database.cpp log4cplus boost-fs boost-sys boost-thread sqlite3 commoncpp : <threading>multi ;
+exe imageHasher : src/main/ImageHasher.cpp src/main/ImageFinder.cpp src/main/HashWorker.cpp src/main/Database.cpp log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi ;
