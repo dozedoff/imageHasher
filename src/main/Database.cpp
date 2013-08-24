@@ -36,6 +36,8 @@ void Database::shutdown() {
 	running = false;
 	LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
 	workerThread->join();
+	LOG4CPLUS_INFO(logger, "Closing database...");
+	sqlite3_close_v2(db);
 }
 
 void Database::exec(const char* command) {
