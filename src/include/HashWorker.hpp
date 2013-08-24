@@ -23,6 +23,7 @@ class HashWorker {
 public:
 	HashWorker(std::list<path>* ,int);
 	void start();
+	void clear();
 
 private:
 	int numOfWorkers;
@@ -33,8 +34,7 @@ private:
 
 	typedef std::list<path> pathList;
 
-	std::vector<pathList> splitWork(void);
-	void doWork(void);
+	void doWork();
 	path getWork();
 };
 

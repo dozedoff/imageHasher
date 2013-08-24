@@ -15,6 +15,8 @@
 #include <GraphicsMagick/Magick++/Exception.h>
 
 #include <string>
+#include <csignal>
+#include <cstdlib>
 
 #include "../include/ImageFinder.hpp"
 #include "../include/HashWorker.hpp"
@@ -27,6 +29,7 @@ Logger logger;
 
 // Prototypes
 path getPath(char**);
+void signalHandler(int);
 
 int main(int argc, char* argv[]) {
 	ImageFinder imgF;
@@ -36,6 +39,8 @@ int main(int argc, char* argv[]) {
 	PropertyConfigurator config("logs.properties");
 	config.configure();
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
+
+	signal(SIGINT, signalHandler);
 
 	path searchPath = getPath(argv);
 	std::list<path> imagePaths = imgF.getImages(searchPath);
@@ -61,4 +66,9 @@ path getPath(char* argv[]) {
 	}
 
 	return path;
+}
+
+void signalHandler(int signal) {
+		LOG4CPLUS_INFO(logger, "Program interrupted, Shutting down");
+		exit(1);
 }

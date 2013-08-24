@@ -39,6 +39,11 @@ void HashWorker::start() {
 	LOG4CPLUS_INFO(logger, "All worker thread(s) have terminated");
 }
 
+void HashWorker::clear() {
+	boost::mutex::scoped_lock(workQueueMutex);
+	imagePaths.clear();
+}
+
 path HashWorker::getWork() {
 	boost::mutex::scoped_lock(workQueueMutex);
 
