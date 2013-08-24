@@ -93,7 +93,7 @@ void Database::drain() {
 	sqlite3_reset(startTrStmt);
 
 	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to start transaction: " << sqlite3_errstr(response));
+		LOG4CPLUS_WARN(logger, "Failed to start transaction: " << sqlite3_errmsg(db));
 	}
 
 
@@ -106,7 +106,7 @@ void Database::drain() {
 	sqlite3_reset(commitTrStmt);
 
 	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to commit transaction: " << sqlite3_errstr(response));
+		LOG4CPLUS_WARN(logger, "Failed to commit transaction: " << sqlite3_errmsg(db));
 	}
 
 	workList->clear();
