@@ -47,7 +47,7 @@ private:
 
 	void init();
 	void exec(const char*);
-	void drain();
+	int drain();
 	void flipLists();
 	void doWork();
 	void prepareStatements();

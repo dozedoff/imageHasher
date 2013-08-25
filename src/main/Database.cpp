@@ -32,12 +32,14 @@ Database::~Database() {
 }
 
 void Database::shutdown() {
-	LOG4CPLUS_INFO(logger, "Shutting down...");
-	running = false;
-	LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
-	workerThread->join();
-	LOG4CPLUS_INFO(logger, "Closing database...");
-	sqlite3_close(db);
+	if (running) {
+		LOG4CPLUS_INFO(logger, "Shutting down...");
+		running = false;
+		LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
+		workerThread->join();
+		LOG4CPLUS_INFO(logger, "Closing database...");
+		sqlite3_close(db);
+	}
 }
 
 void Database::exec(const char* command) {
@@ -82,8 +84,9 @@ void Database::flipLists() {
 	}
 }
 
-void Database::drain() {
+int Database::drain() {
 	std::list<db_data>* workList;
+	int drainCount = 0;
 
 	workList = currentList;
 	flipLists();
@@ -100,6 +103,7 @@ void Database::drain() {
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
+		drainCount++;
 	}
 
 	response = sqlite3_step(commitTrStmt);
@@ -110,6 +114,7 @@ void Database::drain() {
 	}
 
 	workList->clear();
+	return drainCount;
 }
 
 void Database::addToBatch(db_data data) {
@@ -160,15 +165,17 @@ void Database::doWork() {
 		boost::this_thread::sleep_for(boost::chrono::seconds(3));
 
 		if(currentList->size() > 10) {
-			drain();
+			int drainCount = drain();
+			LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
 		}
-
-		LOG4CPLUS_INFO(logger, recordsWritten << " records processed");
 	}
 
 	// make sure both lists are committed
-	drain();
-	drain();
+	LOG4CPLUS_INFO(logger, "Flushing lists...");
+	int drainCount = drain();
+	drainCount += drain();
+
+	LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
 }
 
 unsigned int Database::getRecordsWritten() {
