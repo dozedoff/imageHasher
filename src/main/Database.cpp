@@ -192,7 +192,7 @@ void Database::doWork() {
 	while(running) {
 		boost::this_thread::sleep_for(boost::chrono::seconds(3));
 
-		if(currentList->size() > 10) {
+		if(currentList->size() > 1000) {
 			int drainCount = drain();
 			LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
 		}
