@@ -52,7 +52,7 @@ path HashWorker::getWork() {
 		imagePaths.pop_back();
 		return next;
 	} else {
-		return NULL;
+		return path();
 	}
 }
 
@@ -79,4 +79,6 @@ void HashWorker::doWork() {
 			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
 		}
 	}
+
+	LOG4CPLUS_INFO(logger, "No more work, worker thread shutting down");
 }
