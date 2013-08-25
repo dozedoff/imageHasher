@@ -16,6 +16,11 @@ const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
+Database::Database(const char* dbPath) {
+	Database();
+	dbName = dbPath;
+}
+
 Database::Database() {
 	this->currentList = &dataA;
 	this->recordsWritten = 0;
@@ -101,7 +106,10 @@ int Database::drain() {
 
 
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
-		addToBatch(*ite);
+		if(! entryExists(*ite)){
+			addToBatch(*ite);
+		}
+
 		recordsWritten++;
 		drainCount++;
 	}
@@ -115,6 +123,26 @@ int Database::drain() {
 
 	workList->clear();
 	return drainCount;
+}
+
+bool Database::entryExists(db_data data) {
+	const char* path = data.filePath.c_str();
+	int pathSize = data.filePath.string().size();
+
+	LOG4CPLUS_DEBUG(logger, "Looking for file " << path);
+
+	sqlite3_bind_text(checkExistsStmt, 1, path, pathSize, NULL);
+	sqlite3_bind_text(checkExistsStmt, 2, path, pathSize, NULL);
+
+	sqlite3_step(checkExistsStmt);
+	int response = sqlite3_column_int(checkExistsStmt, 0);
+	sqlite3_reset(checkExistsStmt);
+
+	if (response == 1) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 void Database::addToBatch(db_data data) {

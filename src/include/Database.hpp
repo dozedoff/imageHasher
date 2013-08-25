@@ -19,6 +19,7 @@
 class Database {
 public:
 	Database();
+	Database(const char*);
 	~Database();
 	enum Status {OK = 1, INVALID = 2};
 
@@ -53,7 +54,7 @@ private:
 	void prepareStatements();
 	void addToBatch(db_data);
 	int executeBatch();
-
+	bool entryExists(db_data);
 	static int callback(void*, int, char**, char**);
 };
 
