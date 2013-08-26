@@ -80,6 +80,7 @@ void HashWorker::doWork() {
 			db.add(data);
 		} catch (Magick::Exception &e) {
 			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
+			db.add(data);
 		}
 	}
 
