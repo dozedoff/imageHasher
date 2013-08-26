@@ -30,6 +30,7 @@ Logger logger;
 // Prototypes
 path getPath(char**);
 void signalHandler(int);
+HashWorker *hw;
 
 int main(int argc, char* argv[]) {
 	ImageFinder imgF;
@@ -48,9 +49,9 @@ int main(int argc, char* argv[]) {
 	imageCount = imagePaths.size();
 	LOG4CPLUS_INFO(logger, "Found " << imageCount << " images in " << searchPath);
 
-	HashWorker hw(&imagePaths,4);
+	hw = new HashWorker(&imagePaths,4);
 	LOG4CPLUS_INFO(logger, "Starting hashing of images...");
-	hw.start();
+	hw->start();
 	LOG4CPLUS_INFO(logger, "Processed " << imageCount << " images");
 }
 
@@ -69,6 +70,6 @@ path getPath(char* argv[]) {
 }
 
 void signalHandler(int signal) {
-		LOG4CPLUS_INFO(logger, "Program interrupted, Shutting down");
-		exit(1);
+	LOG4CPLUS_INFO(logger, "Program interrupted, Shutting down");
+	hw->clear();
 }
