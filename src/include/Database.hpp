@@ -34,6 +34,7 @@ public:
 	void add(db_data);
 	unsigned int getRecordsWritten();
 	void shutdown();
+	bool entryExists(db_data);
 private:
 	sqlite3 *db;
 	char* errMsg;
@@ -55,7 +56,6 @@ private:
 	void prepareStatements();
 	void addToBatch(db_data);
 	int executeBatch();
-	bool entryExists(db_data);
 	static int callback(void*, int, char**, char**);
 };
 

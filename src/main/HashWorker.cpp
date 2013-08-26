@@ -65,11 +65,14 @@ void HashWorker::doWork() {
 	while (!imagePaths.empty()) {
 		path image = getWork();
 
-		if (image.empty() || !boost::filesystem::exists(image)) {break;}
+		if (image.empty() || !boost::filesystem::exists(image)) {continue;}
 
 		try {
 			filepath = image.string();
 			data = Database::db_data(image);
+			if (db.entryExists(data)) {
+				continue;
+			}
 			pHash = iph.getLongHash(filepath);
 			data.pHash = pHash;
 			data.status = Database::OK;
