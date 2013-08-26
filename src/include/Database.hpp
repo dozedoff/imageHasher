@@ -47,6 +47,7 @@ private:
 	boost::thread *workerThread;
 
 	void init();
+	void setupDatabase();
 	void exec(const char*);
 	int drain();
 	void flipLists();

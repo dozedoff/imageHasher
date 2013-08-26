@@ -17,19 +17,12 @@ const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
 Database::Database(const char* dbPath) {
-	Database();
 	dbName = dbPath;
+	init();
 }
 
 Database::Database() {
-	this->currentList = &dataA;
-	this->recordsWritten = 0;
-	this->running = true;
-	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
-
 	init();
-	prepareStatements();
-	workerThread = new boost::thread(&Database::doWork, this);
 }
 
 Database::~Database() {
@@ -57,6 +50,18 @@ void Database::exec(const char* command) {
 }
 
 void Database::init() {
+	this->currentList = &dataA;
+	this->recordsWritten = 0;
+	this->running = true;
+	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
+
+	setupDatabase();
+	prepareStatements();
+
+	workerThread = new boost::thread(&Database::doWork, this);
+}
+
+void Database::setupDatabase() {
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
 	int ret = sqlite3_open(dbName, &db);
                 exec(const_cast<char *>("PRAGMA page_size = 4096;"));
