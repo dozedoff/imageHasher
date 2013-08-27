@@ -111,10 +111,7 @@ int Database::drain() {
 
 
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
-		if(! entryExists(*ite)){
-			addToBatch(*ite);
-		}
-
+		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
 	}
@@ -131,6 +128,7 @@ int Database::drain() {
 }
 
 bool Database::entryExists(db_data data) {
+	boost::mutex::scoped_lock(dbMutex);
 	const char* path = data.filePath.c_str();
 	int pathSize = data.filePath.string().size();
 
