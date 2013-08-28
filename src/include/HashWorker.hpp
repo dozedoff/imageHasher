@@ -32,6 +32,7 @@ private:
 	log4cplus::Logger logger;
 	Database db;
 	bool running;
+	int totalNumOfFiles;
 
 	typedef std::list<path> pathList;
 

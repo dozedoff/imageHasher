@@ -22,6 +22,7 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 	}
 
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashWorker"));
+	totalNumOfFiles = imagePaths->size();
 }
 
 void HashWorker::start() {
@@ -38,6 +39,7 @@ void HashWorker::start() {
 	tg.join_all();
 	db.shutdown();
 	LOG4CPLUS_INFO(logger, "All worker thread(s) have terminated");
+	LOG4CPLUS_INFO(logger, "Hashed " << db.getRecordsWritten() << " of " << totalNumOfFiles << " images");
 }
 
 void HashWorker::clear() {

@@ -52,7 +52,6 @@ int main(int argc, char* argv[]) {
 	hw = new HashWorker(&imagePaths,4);
 	LOG4CPLUS_INFO(logger, "Starting hashing of images...");
 	hw->start();
-	LOG4CPLUS_INFO(logger, "Processed " << imageCount << " images");
 }
 
 path getPath(char* argv[]) {
