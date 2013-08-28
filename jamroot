@@ -10,4 +10,4 @@ lib boost-thread : : <name>boost_thread ;
 lib boost-chrono : : <name>boost_chrono ;
 lib sqlite3 : : <name>sqlite3 ;
 
-exe imageHasher : src/main/ImageHasher.cpp src/main/ImageFinder.cpp src/main/HashWorker.cpp src/main/Database.cpp log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
+exe imageHasher : [ GLOB src/main : *.cpp ] log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
