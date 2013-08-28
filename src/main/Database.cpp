@@ -185,12 +185,24 @@ void Database::addToBatch(db_data data) {
 
 void Database::prepareStatements() {
 	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
-	sqlite3_prepare_v2(db, insertImageQuery, strlen(insertImageQuery), &addOkStmt, NULL);
-	sqlite3_prepare_v2(db, insertInvalidQuery, strlen(insertInvalidQuery), &addInvalidStmt, NULL);
-	sqlite3_prepare_v2(db, checkExistsQuery, strlen(checkExistsQuery), &checkExistsStmt, NULL);
 
-	sqlite3_prepare_v2(db, startTransactionQuery, strlen(startTransactionQuery), &startTrStmt, NULL);
-	sqlite3_prepare_v2(db, commitTransactionQuery, strlen(commitTransactionQuery), &commitTrStmt, NULL);
+	createPreparedStatement(insertImageQuery, addOkStmt);
+	createPreparedStatement(insertInvalidQuery, addInvalidStmt);
+	createPreparedStatement(checkExistsQuery, checkExistsStmt);
+
+	createPreparedStatement(startTransactionQuery, startTrStmt);
+	createPreparedStatement(commitTransactionQuery, commitTrStmt);
+}
+
+void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
+	int error = 0;
+
+	error = sqlite3_prepare_v2(db, query, strlen(query), &stmt, NULL);
+
+	if (SQLITE_OK != error) {
+		LOG4CPLUS_ERROR(logger, "Failed to prepare statement " << query << " -> " << error);
+		throw "Prepare statement failed";
+	}
 }
 
 void Database::doWork() {
