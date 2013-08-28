@@ -161,6 +161,7 @@ void Database::addToBatch(db_data data) {
 
 		if (response != SQLITE_DONE) {
 			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
+			recordsWritten--;
 		}
 		sqlite3_reset(addOkStmt);
 		break;
@@ -171,6 +172,7 @@ void Database::addToBatch(db_data data) {
 
 		if (response != SQLITE_DONE) {
 			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath);
+			recordsWritten--;
 		}
 
 		sqlite3_reset(addInvalidStmt);
