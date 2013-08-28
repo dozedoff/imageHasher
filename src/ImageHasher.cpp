@@ -18,9 +18,9 @@
 #include <csignal>
 #include <cstdlib>
 
-#include "../include/ImageFinder.hpp"
-#include "../include/HashWorker.hpp"
-#include "../../commoncpp/src/include/hash/ImagePHash.hpp"
+#include "include/ImageFinder.hpp"
+#include "include/HashWorker.hpp"
+#include "../commoncpp/src/include/hash/ImagePHash.hpp"
 
 using namespace log4cplus;
 using namespace boost::filesystem;

@@ -13,5 +13,5 @@ lib boost-chrono : : <name>boost_chrono ;
 lib sqlite3 : : <name>sqlite3 ;
 lib gtest : : <name>gtest ;
 
-exe imageHasher : [ GLOB src/main : *.cpp ] log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
-unit-test tests : [ GLOB src/test : *.cpp ] src/main/Database.cpp gtest log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp ;
+exe imageHasher : [ GLOB src/main : *.cpp ] src/ImageHasher.cpp log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
+unit-test tests : [ GLOB src/test src/main : *.cpp ] gtest log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp ;
