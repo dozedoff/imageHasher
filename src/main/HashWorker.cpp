@@ -14,6 +14,7 @@
 using std::list;
 
 HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorkers(numOfWorkers), imagePaths(*imagePaths) {
+	running = true;
 	if (numOfWorkers > 0) {
 
 	} else {
@@ -52,7 +53,8 @@ path HashWorker::getWork() {
 		imagePaths.pop_back();
 		return next;
 	} else {
-		return path();
+		running = false;
+		return boost::filesystem::path();
 	}
 }
 
@@ -62,10 +64,10 @@ void HashWorker::doWork() {
 	std::string filepath;
 	Database::db_data data;
 
-	while (!imagePaths.empty()) {
+	while (running) {
 		path image = getWork();
 
-		if (image.empty() || !boost::filesystem::exists(image)) {break;}
+		if (image.empty() || !boost::filesystem::exists(image)) {continue;}
 
 		try {
 			filepath = image.string();

@@ -31,6 +31,7 @@ private:
 	boost::mutex workQueueMutex;
 	log4cplus::Logger logger;
 	Database db;
+	bool running;
 
 	typedef std::list<path> pathList;
 
