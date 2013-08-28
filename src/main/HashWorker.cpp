@@ -40,12 +40,12 @@ void HashWorker::start() {
 }
 
 void HashWorker::clear() {
-	boost::mutex::scoped_lock(workQueueMutex);
+	boost::mutex::scoped_lock lock(workQueueMutex);
 	imagePaths.clear();
 }
 
 path HashWorker::getWork() {
-	boost::mutex::scoped_lock(workQueueMutex);
+	boost::mutex::scoped_lock lock(workQueueMutex);
 
 	if (!imagePaths.empty()) {
 		path next = imagePaths.back();
@@ -65,7 +65,7 @@ void HashWorker::doWork() {
 	while (!imagePaths.empty()) {
 		path image = getWork();
 
-		if (image.empty() || !boost::filesystem::exists(image)) {continue;}
+		if (image.empty() || !boost::filesystem::exists(image)) {break;}
 
 		try {
 			filepath = image.string();

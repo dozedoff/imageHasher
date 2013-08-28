@@ -50,6 +50,7 @@ void Database::exec(const char* command) {
 }
 
 void Database::init() {
+	boost::mutex::scoped_lock lock(dbMutex);
 	this->currentList = &dataA;
 	this->recordsWritten = 0;
 	this->running = true;
@@ -80,12 +81,12 @@ void Database::setupDatabase() {
 }
 
 void Database::add(db_data data) {
-	boost::mutex::scoped_lock(flipMutex);
+	boost::mutex::scoped_lock lock(flipMutex);
 	currentList->push_back(data);
 }
 
 void Database::flipLists() {
-	boost::mutex::scoped_lock(flipMutex);
+	boost::mutex::scoped_lock lock(flipMutex);
 
 	if(currentList == &dataA) {
 		currentList = &dataB;
@@ -95,6 +96,7 @@ void Database::flipLists() {
 }
 
 int Database::drain() {
+	boost::mutex::scoped_lock lock(dbMutex);
 	std::list<db_data>* workList;
 	int drainCount = 0;
 
@@ -128,7 +130,7 @@ int Database::drain() {
 }
 
 bool Database::entryExists(db_data data) {
-	boost::mutex::scoped_lock(dbMutex);
+	boost::mutex::scoped_lock lock(dbMutex);
 	const char* path = data.filePath.c_str();
 	int pathSize = data.filePath.string().size();
 
