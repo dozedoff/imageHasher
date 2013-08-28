@@ -3,11 +3,15 @@ project imageHasher
     <include>/usr/include/GraphicsMagick/
 ;
 
+import testing ;
+
 lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
 lib boost-sys : : <name>boost_system ;
 lib boost-thread : : <name>boost_thread ;
 lib boost-chrono : : <name>boost_chrono ;
 lib sqlite3 : : <name>sqlite3 ;
+lib gtest : : <name>gtest ;
 
 exe imageHasher : [ GLOB src/main : *.cpp ] log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
+unit-test tests : [ GLOB src/test : *.cpp ] src/main/Database.cpp gtest log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp ;

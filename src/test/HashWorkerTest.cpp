@@ -5,5 +5,5 @@
  *      Author: nicholas
  */
 
-#include "HashWorker.h"
+#include "../include/HashWorker.hpp"
 
