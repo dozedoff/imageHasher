@@ -51,8 +51,8 @@ path HashWorker::getWork() {
 	boost::mutex::scoped_lock lock(workQueueMutex);
 
 	if (!imagePaths.empty()) {
-		path next = imagePaths.back();
-		imagePaths.pop_back();
+		path next = imagePaths.front();
+		imagePaths.pop_front();
 		return next;
 	} else {
 		running = false;
