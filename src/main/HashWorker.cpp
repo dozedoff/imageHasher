@@ -30,7 +30,7 @@ void HashWorker::start() {
 	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
 
 	for(int i = 0; i < numOfWorkers; i++) {
-		boost::thread *t = new boost::thread(&HashWorker::doWork, this);
+		boost::thread *t = new boost::thread(&HashWorker::doWork, this, i);
 		tg.add_thread(t);
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
@@ -58,7 +58,7 @@ path HashWorker::getWork() {
 	}
 }
 
-void HashWorker::doWork() {
+void HashWorker::doWork(int workerNum) {
 	ImagePHash iph(32, 9);
 	int64_t pHash = 0;
 	std::string filepath;
@@ -67,24 +67,28 @@ void HashWorker::doWork() {
 	while (running) {
 		path image = getWork();
 
-		if (image.empty() || !boost::filesystem::exists(image)) {continue;}
+		if (image.empty() || !boost::filesystem::exists(image)) {
+			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Path empty or invalid, skipping... " << image);
+			continue;
+		}
 
 		try {
 			filepath = image.string();
 			data = Database::db_data(image);
 			if (db.entryExists(data)) {
+				LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Found " << image << " skipping...");
 				continue;
 			}
 			pHash = iph.getLongHash(filepath);
 			data.pHash = pHash;
 			data.status = Database::OK;
-			LOG4CPLUS_DEBUG(logger, pHash << " - " << image);
+			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << pHash << " - " << image);
 			db.add(data);
 		} catch (Magick::Exception &e) {
-			LOG4CPLUS_WARN(logger, "Failed to process image " << filepath << " : " << e.what());
+			LOG4CPLUS_WARN(logger, "HashWorker " << workerNum << ": " << "Failed to process image " << filepath << " : " << e.what());
 			db.add(data);
 		}
 	}
 
-	LOG4CPLUS_INFO(logger, "No more work, worker thread shutting down");
+	LOG4CPLUS_INFO(logger, "HashWorker " << workerNum << ": " << "No more work, worker thread shutting down");
 }

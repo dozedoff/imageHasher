@@ -35,7 +35,7 @@ private:
 
 	typedef std::list<path> pathList;
 
-	void doWork();
+	void doWork(int);
 	path getWork();
 };
 
