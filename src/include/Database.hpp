@@ -34,6 +34,7 @@ public:
 	void add(db_data);
 	unsigned int getRecordsWritten();
 	void shutdown();
+	int flush();
 	bool entryExists(db_data);
 private:
 	sqlite3 *db;

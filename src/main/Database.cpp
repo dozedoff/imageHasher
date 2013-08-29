@@ -29,6 +29,17 @@ Database::~Database() {
 	shutdown();
 }
 
+int Database::flush() {
+	int drainCount = 0;
+
+	LOG4CPLUS_INFO(logger, "Flushing lists...");
+
+	drainCount = drain();
+	drainCount += drain();
+
+	return drainCount;
+}
+
 void Database::shutdown() {
 	if (running) {
 		LOG4CPLUS_INFO(logger, "Shutting down...");
@@ -218,10 +229,7 @@ void Database::doWork() {
 	}
 
 	// make sure both lists are committed
-	LOG4CPLUS_INFO(logger, "Flushing lists...");
-	int drainCount = drain();
-	drainCount += drain();
-
+	int drainCount = flush();
 	LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
 }
 
