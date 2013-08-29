@@ -102,6 +102,7 @@ TEST(DatabaseTest, entryExists) {
 
 	Database::db_data dbd1("foo");
 	db.add(dbd1);
-	sleep(4);
+	db.flush();
 	ASSERT_TRUE(db.entryExists(dbd1));
+	db.shutdown();
 }
