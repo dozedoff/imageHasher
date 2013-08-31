@@ -101,6 +101,7 @@ TEST(DatabaseTest, entryExists) {
 	Database db(dbPath.c_str());
 
 	Database::db_data dbd1("foo");
+	dbd1.status = Database::OK;
 	db.add(dbd1);
 	db.flush();
 	ASSERT_TRUE(db.entryExists(dbd1));
