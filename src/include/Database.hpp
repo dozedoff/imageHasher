@@ -44,7 +44,7 @@ private:
 	std::list<db_data> dataA, dataB;
 	std::list<db_data>* currentList;
 	boost::mutex flipMutex, dbMutex;
-	sqlite3_stmt *addOkStmt, *addInvalidStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt;
+	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
 	bool running;

@@ -11,6 +11,7 @@ const char *dbName = "imageHasher.db";
 
 const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUES (?,?)";
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
+const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?)";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -189,6 +190,18 @@ void Database::addToBatch(db_data data) {
 		sqlite3_reset(addInvalidStmt);
 		break;
 
+	case FILTER:
+		sqlite3_bind_int64(addFilterStmt, 1, data.pHash);
+		sqlite3_bind_text(addFilterStmt, 2, data.reason.c_str(), data.reason.size(), SQLITE_STATIC);
+		response = sqlite3_step(addFilterStmt);
+
+		if (response != SQLITE_DONE) {
+			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason);
+		}
+
+		sqlite3_reset(addFilterStmt);
+		break;
+
 	default:
 		LOG4CPLUS_ERROR(logger, "Unhandled state encountered");
 		throw "Unhandled state encountered";
@@ -201,6 +214,7 @@ void Database::prepareStatements() {
 
 	createPreparedStatement(insertImageQuery, addOkStmt);
 	createPreparedStatement(insertInvalidQuery, addInvalidStmt);
+	createPreparedStatement(insertFilterQuery,addFilterStmt);
 	createPreparedStatement(checkExistsQuery, checkExistsStmt);
 
 	createPreparedStatement(startTransactionQuery, startTrStmt);
