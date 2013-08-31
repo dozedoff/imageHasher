@@ -88,6 +88,7 @@ void HashWorker::doWork(int workerNum) {
 			db.add(data);
 		} catch (Magick::Exception &e) {
 			LOG4CPLUS_WARN(logger, "HashWorker " << workerNum << ": " << "Failed to process image " << filepath << " : " << e.what());
+			data.status = Database::INVALID;
 			db.add(data);
 		}
 	}

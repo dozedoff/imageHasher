@@ -21,13 +21,15 @@ public:
 	Database();
 	Database(const char*);
 	~Database();
-	enum Status {OK = 1, INVALID = 2};
+	enum Status {OK, INVALID, FILTER, UNKNOWN};
 
 	struct db_data {
-		db_data() : filePath(""), pHash(0), status(INVALID) {};
-		db_data(boost::filesystem::path path) : filePath(path), pHash(0), status(INVALID) {};
+		db_data() : filePath(""), pHash(0), reason(""), status(UNKNOWN) {};
+		db_data(boost::filesystem::path path) : filePath(path), pHash(0), reason(""), status(UNKNOWN) {};
+
 		boost::filesystem::path filePath;
 		uint64_t pHash;
+		std::string reason;
 		Status status;
 	};
 
