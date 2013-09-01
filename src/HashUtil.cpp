@@ -13,6 +13,9 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	po::options_description desc = po::options_description("Allowed options");
+	po::options_description hidden("Hidden options");
+	po::options_description allOptions;
+
 	po::positional_options_description pos;
 	pos.add("path", -1);
 
@@ -20,11 +23,16 @@ int main(int argc, char* argv[]) {
 			("help", "Display this help message")
 			("filter", po::value<string>(), "Add files in the directory and subdirectories into filter list")
 			("prune", "Remove non-existing file paths from the database")
-			("path", po::value<vector<string> >()->multitoken(), "Paths to process")
 	;
 
+	hidden.add_options()
+		("path", po::value<vector<string> >()->multitoken(), "Paths to process")
+	;
+
+	allOptions.add(desc).add(hidden);
+
 	po::variables_map vm;
-	po::store(po::command_line_parser(argc,argv).options(desc).positional(pos).run(), vm);
+	po::store(po::command_line_parser(argc,argv).options(allOptions).positional(pos).run(), vm);
 	po::notify(vm);
 
 	if(vm.count("help") > 0) {
