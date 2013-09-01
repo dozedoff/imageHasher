@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 			("help", "Display this help message")
 			("filter", po::value<string>(), "Add files in the directory and subdirectories into filter list")
 			("prune", "Remove non-existing file paths from the database")
-			("path", po::value<vector<string> >(), "Paths to process")
+			("path", po::value<vector<string> >()->multitoken(), "Paths to process")
 	;
 
 	po::variables_map vm;
@@ -44,5 +44,13 @@ int main(int argc, char* argv[]) {
 	}
 
 //	cout << "Folders to process:\n" << vm["path"].as<vector<string> >() << "\n";
+
+	// workaround for printing paths
+	cout << "Folders to process:\n";
+	vector<string> paths = vm["path"].as<vector<string> >();
+
+	for(vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
+		cout << *ite << "\n";
+	}
 }
 
