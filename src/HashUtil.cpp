@@ -7,7 +7,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-#include <cstdio>
+#include <iostream>
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -62,9 +62,6 @@ int main(int argc, char* argv[]) {
 		cout << "Pruning database.\n";
 	}
 
-//	cout << "Folders to process:\n" << vm["path"].as<vector<string> >() << "\n";
-
-	// workaround for printing paths
 	cout << "Folders to process:\n";
 	vector<string> paths = vm["path"].as<vector<string> >();
 
