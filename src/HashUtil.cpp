@@ -9,38 +9,40 @@
 #include <cstdio>
 
 namespace po = boost::program_options;
+using namespace std;
 
 int main(int argc, char* argv[]) {
 	po::options_description desc = po::options_description("Allowed options");
 	desc.add_options()
 			("help", "Display this help message")
-			("filter", po::value<std::string>(), "Add files in the directory and subdirectories into filter list")
+			("filter", po::value<string>(), "Add files in the directory and subdirectories into filter list")
 			("prune", "Remove non-existing file paths from the database")
-			("path", po::value<std::vector<std::string> >(), "Paths to process")
+			("path", po::value<vector<string> >(), "Paths to process")
 	;
 
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
 
 	if(vm.count("help") > 0) {
-		std::cout << desc << "\n";
+		cout << desc << "\n";
 		exit(0);
 	}else if(vm.count("path") == 0){
-		std::cout << "No paths given, aborting.\n";
+		cout << "No paths given, aborting.\n";
 		exit(1);
 	}else if((vm.count("filter") == 0) && (vm.count("prune") == 0)){
-		std::cout << "No operation selected, aborting.\n";
+	cout << "No operation selected, aborting.\n";
 		exit(2);
 	}
 
 	if(vm.count("filter")){
-		std::cout << "Adding files to filter with reason \"" << vm["filter"].as<std::string>() << "\"\n";
+		cout << "Adding files to filter with reason \"" << vm["filter"].as<string>() << "\"\n";
 	}
 
 	if(vm.count("prune")) {
-		std::cout << "Pruning database.\n";
+		cout << "Pruning database.\n";
 	}
 
-//	std::cout << "Folders to process:\n" << vm["path"].as< std::vector<std::string> >() << "\n";
+//	cout << "Folders to process:\n" << vm["path"].as<vector<string> >() << "\n";
 }
 
