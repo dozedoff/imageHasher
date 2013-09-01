@@ -13,6 +13,9 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 	po::options_description desc = po::options_description("Allowed options");
+	po::positional_options_description pos;
+	pos.add("path", -1);
+
 	desc.add_options()
 			("help", "Display this help message")
 			("filter", po::value<string>(), "Add files in the directory and subdirectories into filter list")
@@ -21,7 +24,7 @@ int main(int argc, char* argv[]) {
 	;
 
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::store(po::command_line_parser(argc,argv).options(desc).positional(pos).run(), vm);
 	po::notify(vm);
 
 	if(vm.count("help") > 0) {
