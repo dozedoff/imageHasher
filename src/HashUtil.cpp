@@ -9,6 +9,8 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 
+#include "include/ImageFinder.hpp"
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
@@ -17,6 +19,10 @@ using namespace std;
 bool isVaidPath(string path) {
 	fs::path p(path);
 	return fs::exists(p) && fs::is_directory(p);
+}
+
+void filter(list<fs::path> images, string reason){
+
 }
 
 int main(int argc, char* argv[]) {
@@ -70,6 +76,20 @@ int main(int argc, char* argv[]) {
 			cout << *ite << " - OK" << "\n";
 		} else {
 			cout << *ite << " - INVALID" << "\n";
+		}
+	}
+
+	ImageFinder imageFinder;
+
+	//TODO add user confirmation here
+	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
+		fs::path path(*ite);
+		list<fs::path> images = imageFinder.getImages(path);
+
+		//TODO prune db
+
+		if(vm.count("filter") > 0) {
+			filter(images, vm["filter"].as<string>());
 		}
 	}
 }
