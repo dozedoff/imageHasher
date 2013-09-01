@@ -6,10 +6,18 @@
  */
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <cstdio>
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
 using namespace std;
+
+bool isVaidPath(string path) {
+	fs::path p(path);
+	return fs::exists(p) && fs::is_directory(p);
+}
 
 int main(int argc, char* argv[]) {
 	po::options_description desc = po::options_description("Allowed options");
@@ -60,8 +68,11 @@ int main(int argc, char* argv[]) {
 	cout << "Folders to process:\n";
 	vector<string> paths = vm["path"].as<vector<string> >();
 
-	for(vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
-		cout << *ite << "\n";
+	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
+		if (isVaidPath(*ite)) {
+			cout << *ite << " - OK" << "\n";
+		} else {
+			cout << *ite << " - INVALID" << "\n";
+		}
 	}
 }
-
