@@ -93,6 +93,7 @@ int main(int argc, char* argv[]) {
 			cout << *ite << " - OK" << "\n";
 		} else {
 			cout << *ite << " - INVALID" << "\n";
+			paths.erase(ite);
 		}
 	}
 
