@@ -7,20 +7,28 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
+
+#include <log4cplus/logger.h>
+#include <log4cplus/loggingmacros.h>
+
 #include <iostream>
 
 #include "include/ImageFinder.hpp"
 #include "include/Database.hpp"
 #include "../commoncpp/src/include/commoncpp.hpp"
 
+
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using namespace std;
+using namespace log4cplus;
 
 ImageFinder imageFinder;
 Database db;
 ImagePHash iph;
+
+Logger logger;
 
 bool isVaidPath(string path) {
 	fs::path p(path);
@@ -43,6 +51,10 @@ void filter(list<fs::path> images, string reason){
 }
 
 int main(int argc, char* argv[]) {
+	PropertyConfigurator config("logs.properties");
+	config.configure();
+	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashUtil"));
+
 	po::options_description desc = po::options_description("Allowed options");
 	po::options_description hidden("Hidden options");
 	po::options_description allOptions;
@@ -101,11 +113,13 @@ int main(int argc, char* argv[]) {
 	//TODO add user confirmation here
 	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
 		fs::path path(*ite);
+		LOG4CPLUS_INFO(logger, "Processing directory " << path);
 		list<fs::path> images = imageFinder.getImages(path);
 
 		//TODO prune db
 
 		if(vm.count("filter") > 0) {
+			LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << path);
 			filter(images, vm["filter"].as<string>());
 		}
 	}
