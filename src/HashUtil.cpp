@@ -10,11 +10,17 @@
 #include <iostream>
 
 #include "include/ImageFinder.hpp"
+#include "include/Database.hpp"
+#include "../commoncpp/src/include/commoncpp.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using namespace std;
+
+ImageFinder imageFinder;
+Database db;
+ImagePHash iph;
 
 bool isVaidPath(string path) {
 	fs::path p(path);
@@ -22,7 +28,18 @@ bool isVaidPath(string path) {
 }
 
 void filter(list<fs::path> images, string reason){
+	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
+		int64_t pHash = iph.getLongHash(ite->string());
 
+		Database::db_data data;
+		data.pHash = pHash;
+		data.reason = reason;
+		data.status = Database::FILTER;
+
+		db.add(data);
+	}
+
+	db.flush();
 }
 
 int main(int argc, char* argv[]) {
@@ -79,7 +96,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	ImageFinder imageFinder;
 
 	//TODO add user confirmation here
 	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
