@@ -116,11 +116,14 @@ int main(int argc, char* argv[]) {
 		LOG4CPLUS_INFO(logger, "Processing directory " << path);
 		list<fs::path> images = imageFinder.getImages(path);
 
-		//TODO prune db
-
 		if(vm.count("filter") > 0) {
 			LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << path);
 			filter(images, vm["filter"].as<string>());
+		}
+
+		if(vm.count("prune") > 0){
+			//TODO prune db
+			LOG4CPLUS_ERROR(logger, "Not implemented yet");
 		}
 	}
 }
