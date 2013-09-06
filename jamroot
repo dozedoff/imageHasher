@@ -15,6 +15,6 @@ lib gtest : : <name>gtest ;
 lib boost-option : : <name>boost_program_options ;
 
 lib ihcommon : [ GLOB src/main : *.cpp ] log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 commoncpp : <threading>multi <link>shared ;
-exe imageHasher : src/ImageHasher.cpp log4cplus boost-fs boost-sys commoncpp ihcommon : <threading>multi <link>shared ;
+exe imageHasher : src/ImageHasher.cpp log4cplus boost-fs boost-sys boost-option commoncpp ihcommon : <threading>multi <link>shared ;
 unit-test tests : [ GLOB src/test : *.cpp ] gtest boost-fs boost-sys commoncpp ihcommon ;
 exe hashUtil : src/HashUtil.cpp ihcommon commoncpp boost-option boost-fs boost-sys : <threading>multi <link>shared ;

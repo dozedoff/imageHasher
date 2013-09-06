@@ -25,6 +25,10 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 	totalNumOfFiles = imagePaths->size();
 }
 
+HashWorker::~HashWorker(){
+	db.shutdown();
+}
+
 void HashWorker::start() {
 	boost::thread_group tg;
 

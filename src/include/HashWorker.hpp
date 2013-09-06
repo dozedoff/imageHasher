@@ -22,6 +22,7 @@ using boost::filesystem::path;
 class HashWorker {
 public:
 	HashWorker(std::list<path>* ,int);
+	~HashWorker();
 	void start();
 	void clear();
 
