@@ -24,35 +24,48 @@ namespace fs = boost::filesystem;
 using namespace std;
 using namespace log4cplus;
 
-ImageFinder imageFinder;
-Database db;
-ImagePHash iph;
-
-Logger logger;
-
-
 class HashUtil {
 public:
-	int run(int, char**);
+	int run(int, char* []);
 	HashUtil();
+	~HashUtil();
 private:
+	ImageFinder* imageFinder;
+	Database* db;
+	ImagePHash* iph;
+
+	Logger logger;
+
 	bool isValidPath(string);
 	void filter(path, string);
 	void prune(fs::path);
 };
 
 int main(int argc, char* argv[]) {
-	HashUtil hu;
-	return hu.run(argc, argv);
+	HashUtil* hu = new HashUtil();
+	int exitValue = hu->run(argc, argv);
+	delete hu;
+	return exitValue;
+}
+
+HashUtil::~HashUtil() {
+	delete iph;
+	delete db;
+	delete imageFinder;
 }
 
 HashUtil::HashUtil(){
 	PropertyConfigurator config("logs.properties");
 	config.configure();
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashUtil"));
+
+	imageFinder = new ImageFinder();
+	db = new Database();
+	iph = new ImagePHash();
 }
 
 int HashUtil::run(int argc, char* argv[]) {
+	LOG4CPLUS_INFO(logger, "HashUtil init...");
 	po::options_description desc = po::options_description("Allowed options");
 	po::options_description hidden("Hidden options");
 	po::options_description allOptions;
@@ -131,32 +144,32 @@ bool HashUtil::isValidPath(string path) {
 }
 
 void HashUtil::filter(path directory, string reason){
-	list<fs::path> images = imageFinder.getImages(directory);
+	list<fs::path> images = imageFinder->getImages(directory);
 	LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << directory);
 
 	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
-		int64_t pHash = iph.getLongHash(ite->string());
+		int64_t pHash = iph->getLongHash(ite->string());
 
 		Database::db_data data;
 		data.pHash = pHash;
 		data.reason = reason;
 		data.status = Database::FILTER;
 
-		db.add(data);
+		db->add(data);
 	}
 
-	db.flush();
+	db->flush();
 }
 
 void HashUtil::prune(fs::path directory) {
-	list<path> files = db.getFilesWithPath(directory);
+	list<path> files = db->getFilesWithPath(directory);
 	int pruneCount = 0;
 
 	LOG4CPLUS_INFO(logger, "Found " << files.size() << " entries for " << directory);
 
 	for(list<path>::iterator ite = files.begin(); ite != files.end(); ++ite) {
 		if(! fs::exists(*ite)) {
-			db.prunePath(*ite);
+			db->prunePath(*ite);
 			pruneCount++;
 			LOG4CPLUS_DEBUG(logger, "Pruning path " << *ite << " from the database");
 		}
