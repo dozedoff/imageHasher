@@ -12,7 +12,7 @@ const char *dbName = "imageHasher.db";
 const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUES (?,?);";
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
 const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
-const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ?% UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?%;";
+const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ? UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?;";
 const char *prunePathDelete = "BEGIN TRANSACTION; DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?; COMMIT TRANSACTION;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
@@ -166,20 +166,23 @@ bool Database::entryExists(db_data data) {
 
 std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::list<fs::path> filePaths;
-	const char* path = directoryPath.c_str();
-	int pathSize = directoryPath.string().size();
+	std::string query(directoryPath.string());
+	query += "%";
+	const char* path = query.c_str();
+	int pathSize = query.size();
 	int response = -1;
 
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
 	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(pruneQueryStmt, 1, path, pathSize, NULL);
-	sqlite3_bind_text(pruneQueryStmt, 2, path, pathSize, NULL);
+	sqlite3_bind_text(pruneQueryStmt, 1, path, pathSize, SQLITE_STATIC );
+	sqlite3_bind_text(pruneQueryStmt, 2, path, pathSize, SQLITE_STATIC );
 
 	response = sqlite3_step(pruneQueryStmt);
 
-	while(SQLITE_ROW == response) {
-		const char* resultPath = (const char*)sqlite3_column_text(pruneQueryStmt, 1);
+	while (SQLITE_ROW == response) {
+		std::string resultPath;
+		resultPath.append(reinterpret_cast<const char*>(sqlite3_column_text(pruneQueryStmt, 0)));
 		fs::path p(resultPath);
 		filePaths.push_back(p);
 
