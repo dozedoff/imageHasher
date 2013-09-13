@@ -16,6 +16,8 @@
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
 
+namespace fs = boost::filesystem;
+
 class Database {
 public:
 	Database();
@@ -25,7 +27,7 @@ public:
 
 	struct db_data {
 		db_data() : filePath(""), pHash(0), reason(""), status(UNKNOWN) {};
-		db_data(boost::filesystem::path path) : filePath(path), pHash(0), reason(""), status(UNKNOWN) {};
+		db_data(fs::path path) : filePath(path), pHash(0), reason(""), status(UNKNOWN) {};
 
 		boost::filesystem::path filePath;
 		uint64_t pHash;
@@ -38,6 +40,8 @@ public:
 	void shutdown();
 	int flush();
 	bool entryExists(db_data);
+	std::list<fs::path> getFilesWithPath(fs::path);
+	void prunePath(fs::path);
 private:
 	sqlite3 *db;
 	char* errMsg;

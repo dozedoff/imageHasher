@@ -13,7 +13,7 @@ const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUE
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
 const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
 const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE '?%' UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE '?%';";
-const char *prunePathDelete = "DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?;";
+const char *prunePathDelete = "BEGIN TRANSACTION; DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?; COMMIT TRANSACTION;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -162,6 +162,47 @@ bool Database::entryExists(db_data data) {
 	} else {
 		return false;
 	}
+}
+
+std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
+	std::list<fs::path> filePaths;
+	const char* path = directoryPath.c_str();
+	int pathSize = directoryPath.string().size();
+	int response = -1;
+
+	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
+
+	boost::mutex::scoped_lock lock(dbMutex);
+	sqlite3_bind_text(pruneQueryStmt, 1, path, pathSize, NULL);
+	sqlite3_bind_text(pruneQueryStmt, 2, path, pathSize, NULL);
+
+	response = sqlite3_step(pruneQueryStmt);
+
+	while(SQLITE_ROW == response) {
+		std::string resultPath = sqlite3_column_text(pruneQueryStmt, 1);
+		fs::path p(resultPath);
+		filePaths.push_back(p);
+	}
+
+	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
+	return filePaths;
+}
+
+void Database::prunePath(fs::path filePath) {
+	const char* path = filePath.c_str();
+		int pathSize = filePath.string().size();
+		int response = -1;
+
+		boost::mutex::scoped_lock lock(dbMutex);
+		sqlite3_bind_text(pruneDeleteStmt, 1, path, pathSize, NULL);
+		sqlite3_bind_text(pruneDeleteStmt, 2, path, pathSize, NULL);
+
+		response = sqlite3_step(pruneDeleteStmt);
+		sqlite3_reset(pruneDeleteStmt);
+
+		if(SQLITE_DONE != response) {
+			LOG4CPLUS_WARN(logger, "Failed to delete file path " << filePath);
+		}
 }
 
 void Database::addToBatch(db_data data) {
