@@ -179,10 +179,14 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	response = sqlite3_step(pruneQueryStmt);
 
 	while(SQLITE_ROW == response) {
-		std::string resultPath = sqlite3_column_text(pruneQueryStmt, 1);
+		const char* resultPath = (const char*)sqlite3_column_text(pruneQueryStmt, 1);
 		fs::path p(resultPath);
 		filePaths.push_back(p);
+
+		response = sqlite3_step(pruneQueryStmt);
 	}
+
+	sqlite3_reset(pruneQueryStmt);
 
 	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
 	return filePaths;

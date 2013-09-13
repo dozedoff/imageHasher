@@ -30,31 +30,29 @@ ImagePHash iph;
 
 Logger logger;
 
-bool isVaidPath(string path) {
-	fs::path p(path);
-	return fs::exists(p) && fs::is_directory(p);
-}
 
-void filter(list<fs::path> images, string reason){
-	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
-		int64_t pHash = iph.getLongHash(ite->string());
-
-		Database::db_data data;
-		data.pHash = pHash;
-		data.reason = reason;
-		data.status = Database::FILTER;
-
-		db.add(data);
-	}
-
-	db.flush();
-}
+class HashUtil {
+public:
+	int run(int, char**);
+	HashUtil();
+private:
+	bool isValidPath(string);
+	void filter(path, string);
+	void prune(fs::path);
+};
 
 int main(int argc, char* argv[]) {
+	HashUtil hu;
+	return hu.run(argc, argv);
+}
+
+HashUtil::HashUtil(){
 	PropertyConfigurator config("logs.properties");
 	config.configure();
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashUtil"));
+}
 
+int HashUtil::run(int argc, char* argv[]) {
 	po::options_description desc = po::options_description("Allowed options");
 	po::options_description hidden("Hidden options");
 	po::options_description allOptions;
@@ -101,7 +99,7 @@ int main(int argc, char* argv[]) {
 	vector<string> paths = vm["path"].as<vector<string> >();
 
 	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
-		if (isVaidPath(*ite)) {
+		if (isValidPath(*ite)) {
 			cout << *ite << " - OK" << "\n";
 		} else {
 			cout << *ite << " - INVALID" << "\n";
@@ -114,16 +112,56 @@ int main(int argc, char* argv[]) {
 	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
 		fs::path path(*ite);
 		LOG4CPLUS_INFO(logger, "Processing directory " << path);
-		list<fs::path> images = imageFinder.getImages(path);
 
-		if(vm.count("filter") > 0) {
-			LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << path);
-			filter(images, vm["filter"].as<string>());
-		}
-
-		if(vm.count("prune") > 0){
-			//TODO prune db
+		if (vm.count("prune") > 0) {
+			prune(path);
 			LOG4CPLUS_ERROR(logger, "Not implemented yet");
 		}
+
+		if(vm.count("filter") > 0) {
+			filter(path, vm["filter"].as<string>());
+		}
 	}
+
+	return 0;
+}
+
+bool HashUtil::isValidPath(string path) {
+	fs::path p(path);
+	return fs::exists(p) && fs::is_directory(p);
+}
+
+void HashUtil::filter(path directory, string reason){
+	list<fs::path> images = imageFinder.getImages(directory);
+	LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << directory);
+
+	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
+		int64_t pHash = iph.getLongHash(ite->string());
+
+		Database::db_data data;
+		data.pHash = pHash;
+		data.reason = reason;
+		data.status = Database::FILTER;
+
+		db.add(data);
+	}
+
+	db.flush();
+}
+
+void HashUtil::prune(fs::path directory) {
+	list<path> files = db.getFilesWithPath(directory);
+	int pruneCount = 0;
+
+	LOG4CPLUS_INFO(logger, "Found " << files.size() << " entries for " << directory);
+
+	for(list<path>::iterator ite = files.begin(); ite != files.end(); ++ite) {
+		if(! fs::exists(*ite)) {
+			db.prunePath(*ite);
+			pruneCount++;
+			LOG4CPLUS_DEBUG(logger, "Pruning path " << *ite << " from the database");
+		}
+	}
+
+	LOG4CPLUS_INFO(logger, "Pruned " << pruneCount << " of " << files.size() << " entries");
 }
