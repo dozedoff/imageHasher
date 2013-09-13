@@ -115,7 +115,6 @@ int HashUtil::run(int argc, char* argv[]) {
 
 		if (vm.count("prune") > 0) {
 			prune(path);
-			LOG4CPLUS_ERROR(logger, "Not implemented yet");
 		}
 
 		if(vm.count("filter") > 0) {
