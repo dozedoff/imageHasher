@@ -169,7 +169,6 @@ void HashUtil::prune(fs::path directory) {
 		if(! fs::exists(*ite)) {
 			db->prunePath(*ite);
 			pruneCount++;
-			LOG4CPLUS_DEBUG(logger, "Pruning path " << *ite << " from the database");
 		}
 	}
 

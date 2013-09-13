@@ -206,6 +206,7 @@ void Database::prunePath(fs::path filePath) {
 
 		response = sqlite3_step(pruneDeleteStmt);
 		sqlite3_reset(pruneDeleteStmt);
+		LOG4CPLUS_DEBUG(logger, "Pruned path " << path << " from the database");
 
 		if(SQLITE_DONE != response) {
 			LOG4CPLUS_WARN(logger, "Failed to delete file path " << filePath << sqlite3_errmsg(db));
