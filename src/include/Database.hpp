@@ -41,7 +41,7 @@ public:
 	int flush();
 	bool entryExists(db_data);
 	std::list<fs::path> getFilesWithPath(fs::path);
-	void prunePath(fs::path);
+	void prunePath(std::list<fs::path>);
 private:
 	sqlite3 *db;
 	char* errMsg;
@@ -65,6 +65,8 @@ private:
 	void addToBatch(db_data);
 	int executeBatch();
 	static int callback(void*, int, char**, char**);
+	void startTransaction();
+	void commitTransaction();
 };
 
 #endif /* DATABASE_HPP_ */

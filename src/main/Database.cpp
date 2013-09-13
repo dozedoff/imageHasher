@@ -118,14 +118,7 @@ int Database::drain() {
 	workList = currentList;
 	flipLists();
 
-	int response = 0;
-	response = sqlite3_step(startTrStmt);
-	sqlite3_reset(startTrStmt);
-
-	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to start transaction: " << sqlite3_errmsg(db));
-	}
-
+	startTransaction();
 
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
@@ -133,12 +126,7 @@ int Database::drain() {
 		drainCount++;
 	}
 
-	response = sqlite3_step(commitTrStmt);
-	sqlite3_reset(commitTrStmt);
-
-	if(response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger, "Failed to commit transaction: " << sqlite3_errmsg(db));
-	}
+	commitTransaction();
 
 	workList->clear();
 	return drainCount;
@@ -196,16 +184,38 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	return filePaths;
 }
 
-void Database::prunePath(fs::path filePath) {
-	const char* path = filePath.c_str();
-		int pathSize = filePath.string().size();
+void Database::startTransaction() {
+	int response = sqlite3_step(startTrStmt);
+	sqlite3_reset(startTrStmt);
+	if (response != SQLITE_DONE) {
+		LOG4CPLUS_WARN(logger,
+				"Failed to start transaction: " << sqlite3_errmsg(db));
+	}
+}
+
+void Database::commitTransaction() {
+	int response = sqlite3_step(commitTrStmt);
+	sqlite3_reset(commitTrStmt);
+	if (response != SQLITE_DONE) {
+		LOG4CPLUS_WARN(logger,
+				"Failed to commit transaction: " << sqlite3_errmsg(db));
+	}
+}
+
+void Database::prunePath(std::list<fs::path> filePaths) {
+	boost::mutex::scoped_lock lock(dbMutex);
+
+	bool allOk = true;
+
+	startTransaction();
+
+	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
+		const char* path = ite->c_str();
+		int pathSize = ite->string().size();
 		int response = 0;
 
-		bool allOk = true;
-
-		boost::mutex::scoped_lock lock(dbMutex);
-		sqlite3_bind_text(pruneDeleteImageStmt, 1, path, pathSize, NULL);
-		sqlite3_bind_text(pruneDeleteBadFileStmt, 1, path, pathSize, NULL);
+		sqlite3_bind_text(pruneDeleteImageStmt, 1, path, pathSize, SQLITE_TRANSIENT);
+		sqlite3_bind_text(pruneDeleteBadFileStmt, 1, path, pathSize, SQLITE_TRANSIENT);
 
 		response = sqlite3_step(pruneDeleteImageStmt);
 		if(SQLITE_DONE != response) {allOk = false;}
@@ -214,12 +224,13 @@ void Database::prunePath(fs::path filePath) {
 
 		sqlite3_reset(pruneDeleteImageStmt);
 		sqlite3_reset(pruneDeleteBadFileStmt);
+	}
 
-		LOG4CPLUS_DEBUG(logger, "Pruned path " << path << " from the database");
+	commitTransaction();
 
-		if(!allOk) {
-			LOG4CPLUS_WARN(logger, "Failed to delete file path " << filePath << sqlite3_errmsg(db));
-		}
+	if (!allOk) {
+		LOG4CPLUS_WARN(logger, "Failed to delete some file paths");
+	}
 }
 
 void Database::addToBatch(db_data data) {
