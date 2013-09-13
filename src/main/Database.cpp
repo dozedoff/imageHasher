@@ -9,9 +9,11 @@
 
 const char *dbName = "imageHasher.db";
 
-const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUES (?,?)";
+const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUES (?,?);";
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
-const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?)";
+const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
+const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE '?%' UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE '?%';";
+const char *prunePathDelete = "DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -219,6 +221,9 @@ void Database::prepareStatements() {
 
 	createPreparedStatement(startTransactionQuery, startTrStmt);
 	createPreparedStatement(commitTransactionQuery, commitTrStmt);
+
+	createPreparedStatement(prunePathQuery, pruneQueryStmt);
+	createPreparedStatement(prunePathDelete, pruneDeleteStmt);
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
