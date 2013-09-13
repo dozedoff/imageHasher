@@ -13,7 +13,7 @@ const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`) VALUE
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
 const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
 const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ? UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?;";
-const char *prunePathDelete = "BEGIN TRANSACTION; DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?; COMMIT TRANSACTION;";
+const char *prunePathDelete = "DELETE FROM `imagerecord` WHERE `path` = ?; DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -208,7 +208,7 @@ void Database::prunePath(fs::path filePath) {
 		sqlite3_reset(pruneDeleteStmt);
 
 		if(SQLITE_DONE != response) {
-			LOG4CPLUS_WARN(logger, "Failed to delete file path " << filePath);
+			LOG4CPLUS_WARN(logger, "Failed to delete file path " << filePath << sqlite3_errmsg(db));
 		}
 }
 
