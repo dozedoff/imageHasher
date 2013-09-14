@@ -166,12 +166,16 @@ void HashUtil::prune(fs::path directory) {
 	int pruneCount = 0;
 
 	for(list<path>::iterator ite = files.begin(); ite != files.end(); ++ite) {
-		if(! fs::exists(*ite)) {
+		LOG4CPLUS_DEBUG(logger, "Checking if " << *ite << " exists");
+
+		if(fs::exists(*ite)) {
 			files.erase(ite);
+		}else{
 			pruneCount++;
 		}
 	}
 
+	LOG4CPLUS_INFO(logger, "Found " << pruneCount << " files that no longe exist");
 	db->prunePath(files);
 	LOG4CPLUS_INFO(logger, "Pruned " << pruneCount << " of " << files.size() << " entries");
 }
