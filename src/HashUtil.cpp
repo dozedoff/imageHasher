@@ -116,7 +116,7 @@ int HashUtil::run(int argc, char* argv[]) {
 			cout << *ite << " - OK" << "\n";
 		} else {
 			cout << *ite << " - INVALID" << "\n";
-			paths.erase(ite);
+			ite = paths.erase(ite);
 		}
 	}
 
@@ -169,7 +169,7 @@ void HashUtil::prune(fs::path directory) {
 		LOG4CPLUS_DEBUG(logger, "Checking if " << *ite << " exists");
 
 		if(fs::exists(*ite)) {
-			files.erase(ite);
+			ite = files.erase(ite);
 		}else{
 			pruneCount++;
 		}
