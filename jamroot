@@ -23,3 +23,4 @@ lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared ;
 exe imageHasher : src/ImageHasher.cpp libs ihcommon : <threading>multi <link>shared ;
 unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon ;
 exe hashUtil : src/HashUtil.cpp libs ihcommon : <threading>multi <link>shared ;
+exe statsUtil : src/StatsUtil.cpp libs ihcommon : <threading>multi <link>shared ;
