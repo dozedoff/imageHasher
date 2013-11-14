@@ -16,6 +16,7 @@ const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE
 const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
+const char *selectAllPathsQuery = "SELECT `path` from `imagerecord`;";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
@@ -184,6 +185,33 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	return filePaths;
 }
 
+std::list<fs::path> Database::getAllPaths() {
+	std::list<fs::path> filePaths;
+	int response = -1;
+
+	LOG4CPLUS_INFO(logger, "Loading all file paths from database...");
+
+	boost::mutex::scoped_lock lock(dbMutex);
+
+	response = sqlite3_step(selectAllPathsStmt);
+
+	//TODO replace this with an iterator that is passes back (perhaps a custom class?)
+	// this to avoid running out of memory for large databases
+	while (SQLITE_ROW == response) {
+		std::string resultPath;
+		resultPath.append(reinterpret_cast<const char*>(sqlite3_column_text(selectAllPathsStmt, 0)));
+		fs::path p(resultPath);
+		filePaths.push_back(p);
+
+		response = sqlite3_step(selectAllPathsStmt);
+	}
+
+	sqlite3_reset(selectAllPathsStmt);
+
+	LOG4CPLUS_INFO(logger, "Loaded " << filePaths.size() << " paths from database");
+	return filePaths;
+}
+
 void Database::startTransaction() {
 	int response = sqlite3_step(startTrStmt);
 	sqlite3_reset(startTrStmt);
@@ -294,6 +322,7 @@ void Database::prepareStatements() {
 	createPreparedStatement(prunePathQuery, pruneQueryStmt);
 	createPreparedStatement(prunePathDeleteImage, pruneDeleteImageStmt);
 	createPreparedStatement(prunePathDeleteBadFile, pruneDeleteBadFileStmt);
+	createPreparedStatement(selectAllPathsQuery, selectAllPathsStmt);
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {

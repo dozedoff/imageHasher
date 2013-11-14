@@ -41,6 +41,7 @@ public:
 	int flush();
 	bool entryExists(db_data);
 	std::list<fs::path> getFilesWithPath(fs::path);
+	std::list<fs::path> getAllPaths();
 	void prunePath(std::list<fs::path>);
 private:
 	sqlite3 *db;
@@ -48,7 +49,7 @@ private:
 	std::list<db_data> dataA, dataB;
 	std::list<db_data>* currentList;
 	boost::mutex flipMutex, dbMutex;
-	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt;
+	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *selectAllPathsStmt;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
 	bool running;
