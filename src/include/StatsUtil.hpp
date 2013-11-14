@@ -14,6 +14,8 @@
 #define STATSUTIL_HPP_
 
 #include "../include/Database.hpp"
+#include <log4cplus/logger.h>
+#include <log4cplus/loggingmacros.h>
 
 class StatsUtil {
 public:
@@ -23,6 +25,7 @@ public:
 
 private:
 	Database* db;
+	log4cplus::Logger logger;
 };
 
 #endif /* STATSUTIL_HPP_ */
