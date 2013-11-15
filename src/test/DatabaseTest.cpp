@@ -107,3 +107,29 @@ TEST(DatabaseTest, entryExists) {
 	ASSERT_TRUE(db.entryExists(dbd1));
 	db.shutdown();
 }
+
+TEST(DatabaseTest, getAllPaths) {
+	boost::filesystem::path dbPath("/tmp/test.db");
+	boost::filesystem::remove(dbPath);
+
+	Database db(dbPath.c_str());
+
+	Database::db_data dbd1("foo");
+	dbd1.status = Database::OK;
+	db.add(dbd1);
+
+	Database::db_data dbd2("bar");
+	dbd2.status = Database::OK;
+	db.add(dbd2);
+
+	Database::db_data dbd3("baz");
+	dbd3.status = Database::OK;
+	db.add(dbd3);
+
+	db.flush();
+	std::list<boost::filesystem::path> paths = db.getAllPaths();
+
+	ASSERT_EQ(3, paths.size());
+
+	db.shutdown();
+}
