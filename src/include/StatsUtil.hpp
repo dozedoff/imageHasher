@@ -26,6 +26,7 @@ public:
 private:
 	Database* db;
 	log4cplus::Logger logger;
+	std::list<std::string> tokenizeFilename(boost::filesystem::path filepath);
 };
 
 #endif /* STATSUTIL_HPP_ */
