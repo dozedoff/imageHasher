@@ -201,5 +201,6 @@ void HashUtil::updateSha(fs::path directory) {
 	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
 		std::string sha256 = sha->sha256(*ite);
 		db->updateSHA256((*ite).string(),sha256);
+		LOG4CPLUS_DEBUG(logger, "Updating SHA for image " << *ite << " with " << sha256);
 	}
 }

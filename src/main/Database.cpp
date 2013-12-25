@@ -103,6 +103,8 @@ void Database::updateSHA256(std::string path, std::string sha){
 	sqlite3_bind_text(updateShaStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC);
 	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
 
+	sqlite3_step(updateShaStmt);
+
 	sqlite3_reset(updateShaStmt);
 }
 
