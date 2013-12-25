@@ -7,6 +7,7 @@
 
 #include "../include/HashWorker.hpp"
 #include "../../commoncpp/src/include/commoncpp.hpp"
+#include "../../commoncpp/src/include/hash/SHA.hpp"
 
 #include <GraphicsMagick/Magick++.h>
 #include <GraphicsMagick/Magick++/Exception.h>
@@ -62,7 +63,9 @@ path HashWorker::getWork() {
 
 void HashWorker::doWork(int workerNum) {
 	ImagePHash iph(32, 9);
+	SHA sha;
 	int64_t pHash = 0;
+	std::string sha256 = "";
 	std::string filepath;
 	Database::db_data data;
 
@@ -77,11 +80,15 @@ void HashWorker::doWork(int workerNum) {
 		try {
 			filepath = image.string();
 			data = Database::db_data(image);
+
 			if (db.entryExists(data)) {
 				LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Found " << image << " skipping...");
 				continue;
 			}
+
 			pHash = iph.getLongHash(filepath);
+			sha256 = sha.sha256(filepath);
+
 			data.pHash = pHash;
 			data.status = Database::OK;
 			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << pHash << " - " << image);

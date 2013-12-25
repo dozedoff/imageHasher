@@ -26,11 +26,12 @@ public:
 	enum Status {OK, INVALID, FILTER, UNKNOWN};
 
 	struct db_data {
-		db_data() : filePath(""), pHash(0), reason(""), status(UNKNOWN) {};
-		db_data(fs::path path) : filePath(path), pHash(0), reason(""), status(UNKNOWN) {};
+		db_data() : filePath(""), pHash(0), sha256(""), reason(""), status(UNKNOWN) {};
+		db_data(fs::path path) : filePath(path), pHash(0), sha256(""), reason(""), status(UNKNOWN) {};
 
 		boost::filesystem::path filePath;
 		uint64_t pHash;
+		std::string sha256;
 		std::string reason;
 		Status status;
 	};
