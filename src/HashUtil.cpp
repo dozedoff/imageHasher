@@ -16,6 +16,7 @@
 #include "include/ImageFinder.hpp"
 #include "include/Database.hpp"
 #include "../commoncpp/src/include/commoncpp.hpp"
+#include "../commoncpp/src/include/hash/SHA.hpp"
 
 
 namespace po = boost::program_options;
@@ -33,12 +34,14 @@ private:
 	ImageFinder* imageFinder;
 	Database* db;
 	ImagePHash* iph;
+	SHA *sha;
 
 	Logger logger;
 
 	bool isValidPath(string);
 	void filter(path, string);
 	void prune(fs::path);
+	void updateSha(fs::path);
 };
 
 int main(int argc, char* argv[]) {
@@ -52,6 +55,7 @@ HashUtil::~HashUtil() {
 	delete iph;
 	delete db;
 	delete imageFinder;
+	delete sha;
 }
 
 HashUtil::HashUtil(){
@@ -62,6 +66,7 @@ HashUtil::HashUtil(){
 	imageFinder = new ImageFinder();
 	db = new Database();
 	iph = new ImagePHash();
+	sha = new SHA();
 }
 
 int HashUtil::run(int argc, char* argv[]) {
@@ -77,6 +82,7 @@ int HashUtil::run(int argc, char* argv[]) {
 			("help", "Display this help message")
 			("filter", po::value<string>(), "Add files in the directory and subdirectories into filter list")
 			("prune", "Remove non-existing file paths from the database")
+			("sha", "Update SHA256 for all records")
 	;
 
 	hidden.add_options()
@@ -95,8 +101,8 @@ int HashUtil::run(int argc, char* argv[]) {
 	}else if(vm.count("path") == 0){
 		cout << "No paths given, aborting.\n";
 		exit(1);
-	}else if((vm.count("filter") == 0) && (vm.count("prune") == 0)){
-	cout << "No operation selected, aborting.\n";
+	}else if((vm.count("filter") == 0) && (vm.count("prune") == 0) && (vm.count("sha") == 0)){
+		cout << "No operation selected, aborting.\n";
 		exit(2);
 	}
 
@@ -106,6 +112,10 @@ int HashUtil::run(int argc, char* argv[]) {
 
 	if(vm.count("prune")) {
 		cout << "Pruning database.\n";
+	}
+
+	if(vm.count("sha")){
+		cout << "Updating SHA\n";
 	}
 
 	cout << "Folders to process:\n";
@@ -132,6 +142,10 @@ int HashUtil::run(int argc, char* argv[]) {
 
 		if(vm.count("filter") > 0) {
 			filter(path, vm["filter"].as<string>());
+		}
+
+		if(vm.count("sha") > 0) {
+			updateSha(path);
 		}
 	}
 
@@ -178,4 +192,14 @@ void HashUtil::prune(fs::path directory) {
 	LOG4CPLUS_INFO(logger, "Found " << pruneCount << " files that no longe exist");
 	db->prunePath(files);
 	LOG4CPLUS_INFO(logger, "Pruned " << pruneCount << " of " << files.size() << " entries");
+}
+
+void HashUtil::updateSha(fs::path directory) {
+	list<fs::path> images = imageFinder->getImages(directory);
+	LOG4CPLUS_INFO(logger, "Updating SHA for " << images.size() << " image(s) for " << directory);
+
+	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
+		std::string sha256 = sha->sha256(*ite);
+		db->updateSHA256((*ite).string(),sha256);
+	}
 }
