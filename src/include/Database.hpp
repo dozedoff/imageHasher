@@ -37,6 +37,7 @@ public:
 	};
 
 	void add(db_data);
+	void updateSHA256(std::string path, std::string sha);
 	unsigned int getRecordsWritten();
 	void shutdown();
 	int flush();
@@ -49,7 +50,7 @@ private:
 	std::list<db_data> dataA, dataB;
 	std::list<db_data>* currentList;
 	boost::mutex flipMutex, dbMutex;
-	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt;
+	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
 	bool running;

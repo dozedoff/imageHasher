@@ -16,6 +16,7 @@ const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE
 const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
+const char *updateSha = "UPDATE `imagerecord` SET sha256=? WHERE `path`=?";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
@@ -94,6 +95,15 @@ void Database::setupDatabase() {
 		LOG4CPLUS_ERROR(logger, "Database setup failed");
 		throw "Database setup failed";
 	}
+}
+
+void Database::updateSHA256(std::string path, std::string sha){
+	boost::mutex::scoped_lock lock(dbMutex);
+
+	sqlite3_bind_text(updateShaStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC);
+	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
+
+	sqlite3_reset(updateShaStmt);
 }
 
 void Database::add(db_data data) {
@@ -297,6 +307,8 @@ void Database::prepareStatements() {
 	createPreparedStatement(prunePathQuery, pruneQueryStmt);
 	createPreparedStatement(prunePathDeleteImage, pruneDeleteImageStmt);
 	createPreparedStatement(prunePathDeleteBadFile, pruneDeleteBadFileStmt);
+
+	createPreparedStatement(updateSha, updateShaStmt);
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
