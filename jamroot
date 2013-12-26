@@ -13,11 +13,12 @@ lib boost-chrono : : <name>boost_chrono ;
 lib sqlite3 : : <name>sqlite3 ;
 lib gtest : : <name>gtest ;
 lib boost-option : : <name>boost_program_options ;
+lib ncurses : : <name>ncurses ;
 
 use-project commoncpp : commoncpp ;
 build-project commoncpp ;
 
-alias libs : log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 boost-option commoncpp ;
+alias libs : log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 boost-option ncurses commoncpp ;
 
 lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared ;
 exe imageHasher : src/ImageHasher.cpp libs ihcommon : <threading>multi <link>shared ;
