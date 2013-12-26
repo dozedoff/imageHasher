@@ -1,28 +1,21 @@
 #include <gtest/gtest.h>
 #include "../include/Database.hpp"
 #include <boost/filesystem.hpp>
+#include <iostream>
 
-TEST(DatabaseTest, dbCreation) {
-	boost::filesystem::path dbPath("imageHasher.db");
-	boost::filesystem::remove(dbPath);
-
-	Database db;
-
-	ASSERT_TRUE(boost::filesystem::exists(dbPath));
+boost::filesystem::path tempfile() {
+	return boost::filesystem::temp_directory_path() /= boost::filesystem::unique_path();
 }
 
 TEST(DatabaseTest, dbCreationCustom) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
-
+	boost::filesystem::path dbPath(tempfile());
 	Database db(dbPath.c_str());
 
 	ASSERT_TRUE(boost::filesystem::exists(dbPath));
 }
 
 TEST(DatabaseTest, writeRecords) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
+	boost::filesystem::path dbPath(tempfile());
 
 	Database db(dbPath.c_str());
 
@@ -41,8 +34,7 @@ TEST(DatabaseTest, writeRecords) {
 }
 
 TEST(DatabaseTest, writeRecordsWithInvalid) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
+	boost::filesystem::path dbPath(tempfile());
 
 	Database db(dbPath.c_str());
 
@@ -64,8 +56,7 @@ TEST(DatabaseTest, writeRecordsWithInvalid) {
 }
 
 TEST(DatabaseTest, writeDuplicateRecords) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
+	boost::filesystem::path dbPath(tempfile());
 
 	Database db(dbPath.c_str());
 
@@ -84,8 +75,7 @@ TEST(DatabaseTest, writeDuplicateRecords) {
 }
 
 TEST(DatabaseTest, entryExistsNonExistant) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
+	boost::filesystem::path dbPath(tempfile());
 
 	Database db(dbPath.c_str());
 
@@ -95,8 +85,7 @@ TEST(DatabaseTest, entryExistsNonExistant) {
 }
 
 TEST(DatabaseTest, entryExists) {
-	boost::filesystem::path dbPath("/tmp/test.db");
-	boost::filesystem::remove(dbPath);
+	boost::filesystem::path dbPath(tempfile());
 
 	Database db(dbPath.c_str());
 
