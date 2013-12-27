@@ -23,7 +23,7 @@ public:
 	Database();
 	Database(const char*);
 	~Database();
-	enum Status {OK, INVALID, FILTER, UNKNOWN};
+	enum Status {OK, INVALID, FILTER, SHA, UNKNOWN};
 
 	struct db_data {
 		db_data() : filePath(""), pHash(0), sha256(""), reason(""), status(UNKNOWN) {};

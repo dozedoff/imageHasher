@@ -98,8 +98,6 @@ void Database::setupDatabase() {
 }
 
 void Database::updateSHA256(std::string path, std::string sha){
-	boost::mutex::scoped_lock lock(dbMutex);
-
 	sqlite3_bind_text(updateShaStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC);
 	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
 
@@ -262,6 +260,10 @@ void Database::addToBatch(db_data data) {
 			recordsWritten--;
 		}
 		sqlite3_reset(addOkStmt);
+		break;
+
+	case SHA:
+		updateSHA256(data.filePath.string(), data.sha256);
 		break;
 
 	case INVALID:
