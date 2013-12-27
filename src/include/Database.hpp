@@ -42,6 +42,7 @@ public:
 	void shutdown();
 	int flush();
 	bool entryExists(db_data);
+	bool entryExists(fs::path);
 	bool hasSHA(fs::path);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);

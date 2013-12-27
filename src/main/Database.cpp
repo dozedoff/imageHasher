@@ -144,15 +144,15 @@ int Database::drain() {
 	return drainCount;
 }
 
-bool Database::entryExists(db_data data) {
-	boost::mutex::scoped_lock lock(dbMutex);
-	const char* path = data.filePath.c_str();
-	int pathSize = data.filePath.string().size();
+bool Database::entryExists(fs::path filePath) {
+boost::mutex::scoped_lock lock(dbMutex);
+	const char* path = filePath.c_str();
+	int pathSize = filePath.string().size();
 
 	LOG4CPLUS_DEBUG(logger, "Looking for file " << path);
 
-	sqlite3_bind_text(checkExistsStmt, 1, path, pathSize, NULL);
-	sqlite3_bind_text(checkExistsStmt, 2, path, pathSize, NULL);
+	sqlite3_bind_text(checkExistsStmt, 1, path, pathSize, SQLITE_STATIC);
+	sqlite3_bind_text(checkExistsStmt, 2, path, pathSize, SQLITE_STATIC);
 
 	sqlite3_step(checkExistsStmt);
 	int response = sqlite3_column_int(checkExistsStmt, 0);
@@ -163,6 +163,10 @@ bool Database::entryExists(db_data data) {
 	} else {
 		return false;
 	}
+}
+
+bool Database::entryExists(db_data data) {
+	return entryExists(data.filePath);
 }
 
 bool Database::hasSHA(fs::path filepath) {
