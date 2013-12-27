@@ -16,6 +16,7 @@ const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE
 const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
+const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
 const char *updateSha = "UPDATE `imagerecord` SET sha256=? WHERE `path`=?";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -164,6 +165,27 @@ bool Database::entryExists(db_data data) {
 	}
 }
 
+bool Database::hasSHA(fs::path filepath) {
+	boost::mutex::scoped_lock lock(dbMutex);
+
+	LOG4CPLUS_DEBUG(logger, "Looking if " << filepath << " has SHA");
+
+	sqlite3_bind_text(checkSHAStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC);
+
+
+	sqlite3_step(checkSHAStmt);
+		int response = sqlite3_column_int(checkSHAStmt, 0);
+		sqlite3_reset(checkSHAStmt);
+
+		if (response == 1) {
+			return true;
+		} else {
+			return false;
+		}
+
+	return false;
+}
+
 std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::list<fs::path> filePaths;
 	std::string query(directoryPath.string());
@@ -304,6 +326,7 @@ void Database::prepareStatements() {
 	createPreparedStatement(insertInvalidQuery, addInvalidStmt);
 	createPreparedStatement(insertFilterQuery,addFilterStmt);
 	createPreparedStatement(checkExistsQuery, checkExistsStmt);
+	createPreparedStatement(checkSHAQuery,checkSHAStmt);
 
 	createPreparedStatement(startTransactionQuery, startTrStmt);
 	createPreparedStatement(commitTransactionQuery, commitTrStmt);

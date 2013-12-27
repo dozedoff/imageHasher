@@ -162,6 +162,11 @@ void HashUtil::filter(path directory, string reason){
 	LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << directory);
 
 	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
+		if(db->hasSHA(*ite)) {
+			LOG4CPLUS_DEBUG(logger, *ite << " already has a SHA, skipping");
+			continue;
+		}
+
 		int64_t pHash = iph->getLongHash(ite->string());
 
 		Database::db_data data;
