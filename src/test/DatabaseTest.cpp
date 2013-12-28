@@ -96,3 +96,31 @@ TEST(DatabaseTest, entryExists) {
 	ASSERT_TRUE(db.entryExists(dbd1));
 	db.shutdown();
 }
+
+TEST(DatabaseTest, getSHAvalid) {
+	Database db(tempfile().c_str());
+
+	Database::db_data data;
+
+	data.filePath = fs::path("foobar");
+	data.sha256 = "ABCD";
+	data.pHash = 1;
+	data.status = Database::OK;
+
+	db.add(data);
+	db.flush();
+
+	std::string shaHash = db.getSHA(fs::path("foobar"));
+
+	ASSERT_EQ("ABCD", shaHash);
+	db.shutdown();
+}
+
+TEST(DatabaseTest, getSHANotExisting) {
+	Database db(tempfile().c_str());
+
+	std::string shaHash = db.getSHA(fs::path("unknown"));
+
+	ASSERT_TRUE(shaHash.empty());
+	db.shutdown();
+}

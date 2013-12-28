@@ -18,6 +18,7 @@ const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` =
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
 const char *updateSha = "UPDATE `imagerecord` SET sha256=? WHERE `path`=?";
+const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` WHERE `path` = ?;";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
@@ -331,6 +332,7 @@ void Database::prepareStatements() {
 	createPreparedStatement(insertFilterQuery,addFilterStmt);
 	createPreparedStatement(checkExistsQuery, checkExistsStmt);
 	createPreparedStatement(checkSHAQuery,checkSHAStmt);
+	createPreparedStatement(getSHAQuery, getSHAqueryStmt);
 
 	createPreparedStatement(startTransactionQuery, startTrStmt);
 	createPreparedStatement(commitTransactionQuery, commitTrStmt);
@@ -370,4 +372,24 @@ void Database::doWork() {
 
 unsigned int Database::getRecordsWritten() {
 	return recordsWritten;
+}
+
+std::string Database::getSHA(fs::path filepath) {
+	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
+
+	boost::mutex::scoped_lock lock(dbMutex);
+	sqlite3_bind_text(getSHAqueryStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC );
+
+	int response = sqlite3_step(getSHAqueryStmt);
+	std::string sha;
+
+	if (SQLITE_ROW == response) {
+		std::string resultPath;
+		sha = (reinterpret_cast<const char*>(sqlite3_column_text(getSHAqueryStmt, 0)));
+		LOG4CPLUS_DEBUG(logger, "Found SHA " << sha << " for file " << filepath);
+	}
+
+	sqlite3_reset(getSHAqueryStmt);
+
+	return sha;
 }
