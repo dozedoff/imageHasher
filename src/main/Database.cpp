@@ -416,3 +416,13 @@ int Database::getUserSchemaVersion() {
 
 	return dbVersion;
 }
+
+void Database::setUserSchemaVersion(int version) {
+	std::stringstream command;
+	command << "PRAGMA user_version = ";
+	command << version;
+	command << ";";
+
+	Database::exec(command.str().c_str());
+}
+

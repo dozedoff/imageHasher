@@ -48,6 +48,7 @@ public:
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
 	int getUserSchemaVersion();
+	void setUserSchemaVersion(int version);
 
 private:
 	sqlite3 *db;

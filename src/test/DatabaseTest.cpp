@@ -156,3 +156,17 @@ TEST(DatabaseTest, getDefaultUserSchemaVersion) {
 
 	ASSERT_EQ(0,version);
 }
+
+TEST(DatabaseTest, setUserSchemaVersion) {
+	Database db(tempfile().c_str());
+
+	int version = db.getUserSchemaVersion();
+
+	// guard
+	ASSERT_EQ(0, version);
+
+	db.setUserSchemaVersion(42);
+	version = db.getUserSchemaVersion();
+
+	ASSERT_EQ(42, version);
+}
