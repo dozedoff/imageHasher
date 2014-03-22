@@ -23,6 +23,8 @@ const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` WHERE `path` = ?;"
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
+static const int CURRENT_DB_SCHEMA_VERSION = 1;
+
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
 	init();
@@ -34,6 +36,10 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
+}
+
+int Database::getCurrentSchemaVersion() {
+	return CURRENT_DB_SCHEMA_VERSION;
 }
 
 int Database::flush() {
@@ -92,10 +98,34 @@ void Database::setupDatabase() {
                 exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `imagerecord` (`path` VARCHAR NOT NULL , `pHash` BIGINT NOT NULL , PRIMARY KEY (`path`) );"));
                 exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `filterrecord` (`pHash` BIGINT NOT NULL , `reason` VARCHAR NOT NULL , PRIMARY KEY (`pHash`) );"));
                 exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
-                exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
+
+                updateSchema();
 	if(ret) {
 		LOG4CPLUS_ERROR(logger, "Database setup failed");
 		throw "Database setup failed";
+	}
+}
+
+void Database::updateSchema() {
+	int dbVersion = getUserSchemaVersion();
+
+	if(dbVersion == CURRENT_DB_SCHEMA_VERSION){
+		LOG4CPLUS_INFO_STR(logger,"DB schema is up to date.");
+	}else if(dbVersion > CURRENT_DB_SCHEMA_VERSION) {
+		LOG4CPLUS_INFO(logger,"DB schema is newer than the current schema, aborting...");
+		throw std::runtime_error("DB schema is newer than the current version");
+	}else{
+		LOG4CPLUS_INFO(logger,"DB schema is out of date, actual: " << dbVersion << " current: " << CURRENT_DB_SCHEMA_VERSION << " updating...");
+	switch (dbVersion) {
+		case 0:
+			exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
+			break;
+
+		default:
+			break;
+	}
+
+	setUserSchemaVersion(CURRENT_DB_SCHEMA_VERSION);
 	}
 }
 

@@ -154,7 +154,7 @@ TEST(DatabaseTest, getDefaultUserSchemaVersion) {
 
 	int version = db.getUserSchemaVersion();
 
-	ASSERT_EQ(0,version);
+	ASSERT_EQ(Database::getCurrentSchemaVersion(),version);
 }
 
 TEST(DatabaseTest, setUserSchemaVersion) {
@@ -163,10 +163,26 @@ TEST(DatabaseTest, setUserSchemaVersion) {
 	int version = db.getUserSchemaVersion();
 
 	// guard
-	ASSERT_EQ(0, version);
+	ASSERT_EQ(Database::getCurrentSchemaVersion(), version);
 
 	db.setUserSchemaVersion(42);
 	version = db.getUserSchemaVersion();
 
 	ASSERT_EQ(42, version);
 }
+
+TEST(DatabaseTest, dbNewerThanCurrent) {
+	const char* dbPath = tempfile().c_str();
+	Database db(dbPath);
+	db.exec("PRAGMA locking_mode = NORMAL;");
+
+	db.setUserSchemaVersion(42);
+	int version = db.getUserSchemaVersion();
+
+	ASSERT_EQ(42, version);
+
+	db.shutdown();
+	ASSERT_THROW(Database db2(dbPath), std::runtime_error);
+}
+
+

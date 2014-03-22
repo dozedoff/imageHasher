@@ -49,6 +49,8 @@ public:
 	void prunePath(std::list<fs::path>);
 	int getUserSchemaVersion();
 	void setUserSchemaVersion(int version);
+	static int getCurrentSchemaVersion();
+	void exec(const char*);
 
 private:
 	sqlite3 *db;
@@ -64,7 +66,7 @@ private:
 
 	void init();
 	void setupDatabase();
-	void exec(const char*);
+	void updateSchema();
 	int drain();
 	void flipLists();
 	void doWork();
