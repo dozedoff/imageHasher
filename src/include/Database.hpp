@@ -47,6 +47,8 @@ public:
 	std::string getSHA(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
+	int getUserSchemaVersion();
+
 private:
 	sqlite3 *db;
 	char* errMsg;

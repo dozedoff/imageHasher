@@ -148,3 +148,11 @@ TEST(DatabaseTest, updateSHA) {
 
 	ASSERT_EQ("foo", shaHash);
 }
+
+TEST(DatabaseTest, getDefaultUserSchemaVersion) {
+	Database db(tempfile().c_str());
+
+	int version = db.getUserSchemaVersion();
+
+	ASSERT_EQ(0,version);
+}

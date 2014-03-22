@@ -393,3 +393,26 @@ std::string Database::getSHA(fs::path filepath) {
 
 	return sha;
 }
+
+int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,char** columnNames) {
+	int version = -1;
+
+	if(numOfresults == 1) {
+		version = atoi(valuesAsString[0]);
+		*((int*)dbVersion) = version;
+	}
+
+	return 0;
+}
+
+int Database::getUserSchemaVersion() {
+	int dbVersion = -1;
+	sqlite3_exec(db, "PRAGMA user_version;", userVersionCallback, &dbVersion, &errMsg);
+
+	if(errMsg != NULL) {
+		LOG4CPLUS_WARN(logger, "Failed to get user version" << " -> " << errMsg);
+		sqlite3_free(errMsg);
+	}
+
+	return dbVersion;
+}
