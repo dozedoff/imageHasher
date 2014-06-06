@@ -3,9 +3,21 @@
 #include <boost/filesystem.hpp>
 #include <iostream>
 
-boost::filesystem::path tempfile() {
-	return boost::filesystem::temp_directory_path() /= boost::filesystem::unique_path();
-}
+class DatabaseTest : public :: testing::Test {
+protected:
+
+	const Database db;
+	boost::filesystem::path dbPath;
+
+	boost::filesystem::path tempfile() {
+		return boost::filesystem::temp_directory_path() /= boost::filesystem::unique_path();
+	}
+
+	DatabaseTest() {
+		dbPath(tempfile());
+		db = new Database(dbPath);
+	}
+};
 
 TEST(DatabaseTest, dbCreationCustom) {
 	boost::filesystem::path dbPath(tempfile());
