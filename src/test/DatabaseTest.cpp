@@ -6,50 +6,44 @@
 class DatabaseTest : public :: testing::Test {
 protected:
 
-	const Database db;
-	boost::filesystem::path dbPath;
+	Database* db;
+	boost::filesystem::path* dbPath;
 
 	boost::filesystem::path tempfile() {
 		return boost::filesystem::temp_directory_path() /= boost::filesystem::unique_path();
 	}
 
 	DatabaseTest() {
-		dbPath(tempfile());
-		db = new Database(dbPath);
+		dbPath = new boost::filesystem::path(tempfile());
+		db = new Database(dbPath->c_str());
+	}
+
+	~DatabaseTest() {
+		db->shutdown();
+		delete(db);
 	}
 };
 
-TEST(DatabaseTest, dbCreationCustom) {
-	boost::filesystem::path dbPath(tempfile());
-	Database db(dbPath.c_str());
-
-	ASSERT_TRUE(boost::filesystem::exists(dbPath));
+TEST_F(DatabaseTest, dbCreationCustom) {
+	ASSERT_TRUE(boost::filesystem::exists(*dbPath));
 }
 
-TEST(DatabaseTest, writeRecords) {
-	boost::filesystem::path dbPath(tempfile());
-
-	Database db(dbPath.c_str());
-
+TEST_F(DatabaseTest, writeRecords) {
 	Database::db_data dbd1("foo");
 	Database::db_data dbd2("bar");
 
 	dbd1.status = Database::OK;
 	dbd2.status = Database::OK;
 
-	db.add(dbd1);
-	db.add(dbd2);
+	db->add(dbd1);
+	db->add(dbd2);
 
-	db.shutdown();
+	db->shutdown();
 
-	ASSERT_EQ(2, db.getRecordsWritten());
+	ASSERT_EQ(2, db->getRecordsWritten());
 }
 
-TEST(DatabaseTest, writeRecordsWithInvalid) {
-	boost::filesystem::path dbPath(tempfile());
-
-	Database db(dbPath.c_str());
-
+TEST_F(DatabaseTest, writeRecordsWithInvalid) {
 	Database::db_data dbd1("foo");
 	Database::db_data dbd2("bar");
 	Database::db_data dbd3("notValid");
@@ -58,60 +52,46 @@ TEST(DatabaseTest, writeRecordsWithInvalid) {
 	dbd2.status = Database::OK;
 	dbd3.status = Database::INVALID;
 
-	db.add(dbd1);
-	db.add(dbd2);
-	db.add(dbd3);
+	db->add(dbd1);
+	db->add(dbd2);
+	db->add(dbd3);
 
-	db.shutdown();
+	db->shutdown();
 
-	ASSERT_EQ(3, db.getRecordsWritten());
+	ASSERT_EQ(3, db->getRecordsWritten());
 }
 
-TEST(DatabaseTest, writeDuplicateRecords) {
-	boost::filesystem::path dbPath(tempfile());
-
-	Database db(dbPath.c_str());
-
+TEST_F(DatabaseTest, writeDuplicateRecords) {
 	Database::db_data dbd1("foo");
 	Database::db_data dbd2("foo");
 
 	dbd1.status = Database::OK;
 	dbd2.status = Database::OK;
 
-	db.add(dbd1);
-	db.add(dbd2);
+	db->add(dbd1);
+	db->add(dbd2);
 
-	db.shutdown();
+	db->shutdown();
 
-	ASSERT_EQ(1, db.getRecordsWritten());
+	ASSERT_EQ(1, db->getRecordsWritten());
 }
 
-TEST(DatabaseTest, entryExistsNonExistant) {
-	boost::filesystem::path dbPath(tempfile());
-
-	Database db(dbPath.c_str());
-
+TEST_F(DatabaseTest, entryExistsNonExistant) {
 	Database::db_data dbd1("foo");
 
-	ASSERT_FALSE(db.entryExists(dbd1));
+	ASSERT_FALSE(db->entryExists(dbd1));
 }
 
-TEST(DatabaseTest, entryExists) {
-	boost::filesystem::path dbPath(tempfile());
-
-	Database db(dbPath.c_str());
-
+TEST_F(DatabaseTest, entryExists) {
 	Database::db_data dbd1("foo");
 	dbd1.status = Database::OK;
-	db.add(dbd1);
-	db.flush();
-	ASSERT_TRUE(db.entryExists(dbd1));
-	db.shutdown();
+	db->add(dbd1);
+	db->flush();
+	ASSERT_TRUE(db->entryExists(dbd1));
+	db->shutdown();
 }
 
-TEST(DatabaseTest, getSHAvalid) {
-	Database db(tempfile().c_str());
-
+TEST_F(DatabaseTest, getSHAvalid) {
 	Database::db_data data;
 
 	data.filePath = fs::path("foobar");
@@ -119,27 +99,23 @@ TEST(DatabaseTest, getSHAvalid) {
 	data.pHash = 1;
 	data.status = Database::OK;
 
-	db.add(data);
-	db.flush();
+	db->add(data);
+	db->flush();
 
-	std::string shaHash = db.getSHA(fs::path("foobar"));
+	std::string shaHash = db->getSHA(fs::path("foobar"));
 
 	ASSERT_EQ("ABCD", shaHash);
-	db.shutdown();
+	db->shutdown();
 }
 
-TEST(DatabaseTest, getSHANotExisting) {
-	Database db(tempfile().c_str());
-
-	std::string shaHash = db.getSHA(fs::path("unknown"));
+TEST_F(DatabaseTest, getSHANotExisting) {
+	std::string shaHash = db->getSHA(fs::path("unknown"));
 
 	ASSERT_TRUE(shaHash.empty());
-	db.shutdown();
+	db->shutdown();
 }
 
-TEST(DatabaseTest, updateSHA) {
-	Database db(tempfile().c_str());
-
+TEST_F(DatabaseTest, updateSHA) {
 	Database::db_data data;
 
 	data.filePath = fs::path("foobar");
@@ -147,54 +123,48 @@ TEST(DatabaseTest, updateSHA) {
 	data.pHash = 1;
 	data.status = Database::OK;
 
-	db.add(data);
-	db.flush();
+	db->add(data);
+	db->flush();
 
-	std::string shaHash = db.getSHA(fs::path("foobar"));
+	std::string shaHash = db->getSHA(fs::path("foobar"));
 
 	ASSERT_TRUE(shaHash.empty());
 
-	db.updateSHA256("foobar", "foo");
+	db->updateSHA256("foobar", "foo");
 
-	shaHash = db.getSHA(fs::path("foobar"));
+	shaHash = db->getSHA(fs::path("foobar"));
 
 	ASSERT_EQ("foo", shaHash);
 }
 
-TEST(DatabaseTest, getDefaultUserSchemaVersion) {
-	Database db(tempfile().c_str());
-
-	int version = db.getUserSchemaVersion();
+TEST_F(DatabaseTest, getDefaultUserSchemaVersion) {
+	int version = db->getUserSchemaVersion();
 
 	ASSERT_EQ(Database::getCurrentSchemaVersion(),version);
 }
 
-TEST(DatabaseTest, setUserSchemaVersion) {
-	Database db(tempfile().c_str());
-
-	int version = db.getUserSchemaVersion();
+TEST_F(DatabaseTest, setUserSchemaVersion) {
+	int version = db->getUserSchemaVersion();
 
 	// guard
 	ASSERT_EQ(Database::getCurrentSchemaVersion(), version);
 
-	db.setUserSchemaVersion(42);
-	version = db.getUserSchemaVersion();
+	db->setUserSchemaVersion(42);
+	version = db->getUserSchemaVersion();
 
 	ASSERT_EQ(42, version);
 }
 
-TEST(DatabaseTest, dbNewerThanCurrent) {
-	const char* dbPath = tempfile().c_str();
-	Database db(dbPath);
-	db.exec("PRAGMA locking_mode = NORMAL;");
+TEST_F(DatabaseTest, dbNewerThanCurrent) {
+	db->exec("PRAGMA locking_mode = NORMAL;");
 
-	db.setUserSchemaVersion(42);
-	int version = db.getUserSchemaVersion();
+	db->setUserSchemaVersion(42);
+	int version = db->getUserSchemaVersion();
 
 	ASSERT_EQ(42, version);
 
-	db.shutdown();
-	ASSERT_THROW(Database db2(dbPath), std::runtime_error);
+	db->shutdown();
+	ASSERT_THROW(Database db2(dbPath->c_str()), std::runtime_error);
 }
 
 
