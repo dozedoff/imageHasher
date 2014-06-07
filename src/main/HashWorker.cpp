@@ -90,6 +90,7 @@ void HashWorker::doWork(int workerNum) {
 			sha256 = sha.sha256(filepath);
 
 			data.pHash = pHash;
+			data.sha256 = sha256;
 			data.status = Database::OK;
 			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << pHash << " - " << image);
 			db.add(data);
