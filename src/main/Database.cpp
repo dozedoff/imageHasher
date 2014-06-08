@@ -18,7 +18,7 @@ const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;"
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
 const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
-const char *updateSha = "UPDATE `hash` SET `sha256`=? WHERE `id` = (SELECT `hash_id` FROM `imagerecord` WHERE `path`=?);";
+const char *updateSha = "UPDATE `imagerecord` SET `hash_id`=? WHERE `path` = ?;";
 const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
 const char *getPhashQuery = "SELECT `pHash` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
 const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash` WHERE `sha256`= ?;";
@@ -188,7 +188,19 @@ void Database::updateSchema() {
 }
 
 void Database::updateSHA256(std::string path, std::string sha){
-	sqlite3_bind_text(updateShaStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC);
+	int shaId = getSHAid(sha);
+
+	LOG4CPLUS_DEBUG(logger,"Found ID "<< shaId << " for sha " << sha);
+
+	if((shaId == -1) || (shaId == 0)) {
+		LOG4CPLUS_ERROR(logger,"No pHash available, unable to update SHA");
+		return;
+	}else{
+		int64_t pHash = getPhash(path);
+		shaId = addHashEntry(sha,pHash);
+	}
+
+	sqlite3_bind_int(updateShaStmt, 1, shaId);
 	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
 
 	sqlite3_step(updateShaStmt);
