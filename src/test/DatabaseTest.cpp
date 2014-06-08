@@ -29,11 +29,8 @@ TEST_F(DatabaseTest, dbCreationCustom) {
 }
 
 TEST_F(DatabaseTest, writeRecords) {
-	Database::db_data dbd1("foo");
-	Database::db_data dbd2("bar");
-
-	dbd1.status = Database::OK;
-	dbd2.status = Database::OK;
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar", "bar",0);
 
 	db->add(dbd1);
 	db->add(dbd2);
@@ -44,12 +41,10 @@ TEST_F(DatabaseTest, writeRecords) {
 }
 
 TEST_F(DatabaseTest, writeRecordsWithInvalid) {
-	Database::db_data dbd1("foo");
-	Database::db_data dbd2("bar");
-	Database::db_data dbd3("notValid");
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar", "bar",0);
+	Database::db_data dbd3("notValid", "",0);
 
-	dbd1.status = Database::OK;
-	dbd2.status = Database::OK;
 	dbd3.status = Database::INVALID;
 
 	db->add(dbd1);
@@ -62,11 +57,8 @@ TEST_F(DatabaseTest, writeRecordsWithInvalid) {
 }
 
 TEST_F(DatabaseTest, writeDuplicateRecords) {
-	Database::db_data dbd1("foo");
-	Database::db_data dbd2("foo");
-
-	dbd1.status = Database::OK;
-	dbd2.status = Database::OK;
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("foo","foo",0);
 
 	db->add(dbd1);
 	db->add(dbd2);
@@ -83,8 +75,7 @@ TEST_F(DatabaseTest, entryExistsNonExistant) {
 }
 
 TEST_F(DatabaseTest, entryExists) {
-	Database::db_data dbd1("foo");
-	dbd1.status = Database::OK;
+	Database::db_data dbd1("foo","foo",0);
 	db->add(dbd1);
 	db->flush();
 	ASSERT_TRUE(db->entryExists(dbd1));
@@ -116,19 +107,14 @@ TEST_F(DatabaseTest, getSHANotExisting) {
 }
 
 TEST_F(DatabaseTest, updateSHA) {
-	Database::db_data data;
-
-	data.filePath = fs::path("foobar");
-	data.sha256 = "";
-	data.pHash = 1;
-	data.status = Database::OK;
+	Database::db_data data("foobar", "bar", 1);
 
 	db->add(data);
 	db->flush();
 
 	std::string shaHash = db->getSHA(fs::path("foobar"));
 
-	ASSERT_TRUE(shaHash.empty());
+	ASSERT_EQ("bar", shaHash);
 
 	db->updateSHA256("foobar", "foo");
 
