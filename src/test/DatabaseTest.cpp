@@ -165,4 +165,33 @@ TEST_F(DatabaseTest, dbNewerThanCurrent) {
 	ASSERT_THROW(Database db2(dbPath->c_str()), std::runtime_error);
 }
 
+TEST_F(DatabaseTest, getSHAidNoEntries) {
+	int shaId = db->getSHAid("foo");
+
+	ASSERT_EQ(-1, shaId);
+}
+
+TEST_F(DatabaseTest, getSHAidNoMatchingEntries) {
+	Database::db_data data("foobar", "bar", 42);
+	db->add(data);
+	db->flush();
+
+	int shaId = db->getSHAid("foo");
+
+	ASSERT_EQ(-1, shaId);
+}
+
+TEST_F(DatabaseTest, getSHAidMatchingEntry) {
+	Database::db_data data("foobar", "bar", 42);
+	Database::db_data data2("foo", "foo", 42);
+
+	db->add(data);
+	db->add(data2);
+	db->flush();
+
+	int shaId = db->getSHAid("foo");
+
+	ASSERT_EQ(2, shaId);
+}
+
 

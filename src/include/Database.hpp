@@ -53,6 +53,7 @@ public:
 	void setUserSchemaVersion(int version);
 	static int getCurrentSchemaVersion();
 	void exec(const char*);
+	int getSHAid(std::string sha);
 
 private:
 	sqlite3 *db;
@@ -80,7 +81,6 @@ private:
 	void startTransaction();
 	void commitTransaction();
 	int addHashEntry(std::string sha, u_int64_t pHash);
-	int getSHAid(std::string sha);
 };
 
 #endif /* DATABASE_HPP_ */
