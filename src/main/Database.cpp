@@ -20,7 +20,7 @@ const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE 
 const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
 const char *updateSha = "UPDATE `hash` SET `sha256`=? WHERE `id` = (SELECT `hash_id` FROM `imagerecord` WHERE `path`=?);";
 const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
-const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash`;";
+const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash` WHERE `sha256`= ?;";
 const char *insertHashRecordQuery = "INSERT INTO `hash` (`sha256`,`pHash`) VALUES (?,?);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
@@ -534,7 +534,7 @@ int Database::getSHAid(std::string sha) {
 	sqlite3_bind_text(getSHAidQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
 	int response = sqlite3_step(getSHAqueryStmt);
 
-	if (SQLITE_ROW == response) {
+	if (SQLITE_DONE == response) {
 		row_id = sqlite3_column_int(getSHAidQueryStmt,0);
 		LOG4CPLUS_DEBUG(logger, "Found SHA with ID" << row_id);
 	}
