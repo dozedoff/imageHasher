@@ -58,7 +58,7 @@ private:
 	std::list<db_data> dataA, dataB;
 	std::list<db_data>* currentList;
 	boost::mutex flipMutex, dbMutex;
-	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt;
+	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertHashRecordQueryStmt;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
 	bool running;
@@ -77,7 +77,7 @@ private:
 	static int callback(void*, int, char**, char**);
 	void startTransaction();
 	void commitTransaction();
-	int addHashEntry(std::string sha, std::string pHash);
+	int addHashEntry(std::string sha, u_int64_t pHash);
 	int getSHAid(std::string sha);
 };
 
