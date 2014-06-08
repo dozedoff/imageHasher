@@ -20,6 +20,7 @@ const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE 
 const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
 const char *updateSha = "UPDATE `hash` SET `sha256`=? WHERE `id` = (SELECT `hash_id` FROM `imagerecord` WHERE `path`=?);";
 const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
+const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash`;";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
@@ -427,6 +428,7 @@ void Database::prepareStatements() {
 	createPreparedStatement(prunePathDeleteBadFile, pruneDeleteBadFileStmt);
 
 	createPreparedStatement(updateSha, updateShaStmt);
+	createPreparedStatement(getSHAidQuery,getSHAidQueryStmt);
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
@@ -509,4 +511,26 @@ void Database::setUserSchemaVersion(int version) {
 	command << ";";
 
 	Database::exec(command.str().c_str());
+}
+
+int Database::getSHAid(std::string sha) {
+	int row_id = -1;
+
+	sqlite3_bind_text(getSHAidQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
+	int response = sqlite3_step(getSHAqueryStmt);
+
+	if (SQLITE_ROW == response) {
+		row_id = sqlite3_column_int(getSHAidQueryStmt,0);
+		LOG4CPLUS_DEBUG(logger, "Found SHA with ID" << row_id);
+	}
+
+	sqlite3_reset(getSHAqueryStmt);
+
+	return row_id;
+}
+
+int Database::addHashEntry(std::string sha, std::string pHash) {
+	int row_id = -1;
+
+	return row_id;
 }
