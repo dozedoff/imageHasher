@@ -95,12 +95,7 @@ TEST_F(DatabaseTest, entryExists) {
 }
 
 TEST_F(DatabaseTest, getSHAvalid) {
-	Database::db_data data;
-
-	data.filePath = fs::path("foobar");
-	data.sha256 = "ABCD";
-	data.pHash = 1;
-	data.status = Database::OK;
+	Database::db_data data("foobar", "ABCD", 1);
 
 	db->add(data);
 	db->flush();
