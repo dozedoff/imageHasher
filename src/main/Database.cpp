@@ -20,6 +20,7 @@ const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE 
 const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
 const char *updateSha = "UPDATE `hash` SET `sha256`=? WHERE `id` = (SELECT `hash_id` FROM `imagerecord` WHERE `path`=?);";
 const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
+const char *getPhashQuery = "SELECT `pHash` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
 const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash` WHERE `sha256`= ?;";
 const char *insertHashRecordQuery = "INSERT INTO `hash` (`sha256`,`pHash`) VALUES (?,?);";
 
@@ -432,6 +433,7 @@ void Database::prepareStatements() {
 	createPreparedStatement(checkExistsQuery, checkExistsStmt);
 	createPreparedStatement(checkSHAQuery,checkSHAStmt);
 	createPreparedStatement(getSHAQuery, getSHAqueryStmt);
+	createPreparedStatement(getPhashQuery,getPhashQueryStmt);
 
 	createPreparedStatement(startTransactionQuery, startTrStmt);
 	createPreparedStatement(commitTransactionQuery, commitTrStmt);
@@ -494,6 +496,26 @@ std::string Database::getSHA(fs::path filepath) {
 	sqlite3_reset(getSHAqueryStmt);
 
 	return sha;
+}
+
+int64_t Database::getPhash(fs::path filepath) {
+	LOG4CPLUS_DEBUG(logger, "Getting pHash for path " << filepath);
+
+	boost::mutex::scoped_lock lock(dbMutex);
+	sqlite3_bind_text(getPhashQueryStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC );
+
+	int response = sqlite3_step(getPhashQueryStmt);
+	int64_t pHash = 0;
+
+	if (SQLITE_ROW == response) {
+		std::string resultPath;
+		pHash = sqlite3_column_int64(getPhashQueryStmt, 0);
+		LOG4CPLUS_DEBUG(logger, "Found pHash " << pHash << " for file " << filepath);
+	}
+
+	sqlite3_reset(getPhashQueryStmt);
+
+	return pHash;
 }
 
 int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,char** columnNames) {
