@@ -68,6 +68,18 @@ TEST_F(DatabaseTest, writeDuplicateRecords) {
 	ASSERT_EQ(1, db->getRecordsWritten());
 }
 
+TEST_F(DatabaseTest, writeDuplicateRecordsDifferentPath) {
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar","foo",0);
+
+	db->add(dbd1);
+	db->add(dbd2);
+
+	db->shutdown();
+
+	ASSERT_EQ(2, db->getRecordsWritten());
+}
+
 TEST_F(DatabaseTest, entryExistsNonExistant) {
 	Database::db_data dbd1("foo");
 
