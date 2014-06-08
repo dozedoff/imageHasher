@@ -124,7 +124,7 @@ void Database::updateSchema() {
 			exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
 		case 1:
 			// create hash table
-			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` VARCHAR NOT NULL, PRIMARY KEY (`id`));"));
+			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` VARCHAR NOT NULL);"));
 			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `hash_sha_index` ON `hash` (`sha256`);"));
 			exec(const_cast<char *>("CREATE INDEX IF NOT EXISTS `hash_phash_index` ON `hash` (`pHash`);"));
 
