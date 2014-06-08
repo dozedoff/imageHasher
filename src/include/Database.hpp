@@ -50,6 +50,7 @@ public:
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
 	int getUserSchemaVersion();
+	int getEmptyShaRows();
 	void setUserSchemaVersion(int version);
 	static int getCurrentSchemaVersion();
 	void exec(const char*);

@@ -113,6 +113,7 @@ void Database::setupDatabase() {
 
 void Database::updateSchema() {
 	int dbVersion = getUserSchemaVersion();
+	int emptyRows = -1;
 
 	if(dbVersion == CURRENT_DB_SCHEMA_VERSION){
 		LOG4CPLUS_INFO_STR(logger,"DB schema is up to date.");
@@ -127,6 +128,12 @@ void Database::updateSchema() {
 		case 0:
 			exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
 		case 1:
+			emptyRows = getEmptyShaRows();
+			if(emptyRows != 0) {
+				LOG4CPLUS_ERROR(logger,"DB contains " << emptyRows << " SHA rows, aborting upgrade");
+				throw std::runtime_error("DB contains empty SHA rows");
+			}
+
 			// create hash table
 			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` VARCHAR NOT NULL);"));
 			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `hash_sha_index` ON `hash` (`sha256`);"));
@@ -556,6 +563,29 @@ int Database::getUserSchemaVersion() {
 	}
 
 	return dbVersion;
+}
+
+int emptySHAcheckCallback(void* emptyShaRows,int numOfresults,char** valuesAsString,char** columnNames) {
+	int rows = -1;
+
+	if(numOfresults == 1) {
+		rows = atoi(valuesAsString[0]);
+		*((int*)emptyShaRows) = rows;
+	}
+
+	return 0;
+}
+
+int Database::getEmptyShaRows() {
+	int emptyShaRows = -1;
+	sqlite3_exec(db, "SELECT COUNT(*) FROM `imagerecord` WHERE `sha256`='';", emptySHAcheckCallback, &emptyShaRows, &errMsg);
+
+	if(errMsg != NULL) {
+		LOG4CPLUS_WARN(logger, "Failed to get empty sha rows" << " -> " << errMsg);
+		sqlite3_free(errMsg);
+	}
+
+	return emptyShaRows;
 }
 
 void Database::setUserSchemaVersion(int version) {
