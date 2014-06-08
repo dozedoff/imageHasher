@@ -62,6 +62,7 @@ void Database::shutdown() {
 		LOG4CPLUS_INFO(logger, "Shutting down...");
 		running = false;
 		LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
+		workerThread->interrupt();
 		workerThread->join();
 		LOG4CPLUS_INFO(logger, "Closing database...");
 		sqlite3_close(db);
@@ -473,7 +474,11 @@ void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) 
 
 void Database::doWork() {
 	while(running) {
-		boost::this_thread::sleep_for(boost::chrono::seconds(3));
+		try{
+			boost::this_thread::sleep_for(boost::chrono::seconds(3));
+		}catch(boost::thread_interrupted&) {
+			LOG4CPLUS_INFO(logger,"DB thread interrupted");
+		}
 
 		if(currentList->size() > 1000) {
 			int drainCount = drain();
