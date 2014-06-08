@@ -10,16 +10,16 @@
 
 const char *dbName = "imageHasher.db";
 
-const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`, `sha256`) VALUES (?,?,?);";
+const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`hash_id`) VALUES (?,?);";
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
-const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
+const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`hash_id`, `reason`) VALUES (?,?);";
 const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ? UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?;";
 const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
-const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
-const char *updateSha = "UPDATE `imagerecord` SET sha256=? WHERE `path`=?";
-const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` WHERE `path` = ?;";
+const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
+const char *updateSha = "UPDATE `hash` SET `sha256`=? WHERE `id` = (SELECT `hash_id` FROM `imagerecord` WHERE `path`=?);";
+const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
