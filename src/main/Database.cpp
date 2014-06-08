@@ -556,9 +556,9 @@ int Database::getSHAid(std::string sha) {
 	sqlite3_bind_text(getSHAidQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
 	int response = sqlite3_step(getSHAqueryStmt);
 
-	if (SQLITE_DONE == response) {
+	if (SQLITE_ROW == response) {
 		row_id = sqlite3_column_int(getSHAidQueryStmt,0);
-		LOG4CPLUS_DEBUG(logger, "Found SHA with ID" << row_id);
+		LOG4CPLUS_DEBUG(logger, "Found SHA with ID " << row_id);
 	}
 
 	sqlite3_reset(getSHAqueryStmt);
