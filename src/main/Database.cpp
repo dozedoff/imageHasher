@@ -360,12 +360,24 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 
 void Database::addToBatch(db_data data) {
 	int response = 0;
+	int hashId = -1;
 
 	switch (data.status) {
 	case OK:
+		hashId = getSHAid(data.sha256);
+
+		if(hashId == -1) {
+			hashId = addHashEntry(data.sha256, data.pHash);
+		}
+
+		if(hashId == -1) {
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " unable to add hash entry");
+			recordsWritten--;
+			return;
+		}
+
 		sqlite3_bind_text(addOkStmt, 1, data.filePath.c_str(), data.filePath.string().size(), SQLITE_STATIC );
-		sqlite3_bind_int64(addOkStmt, 2, data.pHash);
-		sqlite3_bind_text(addOkStmt, 3, data.sha256.c_str(), data.sha256.size(), SQLITE_STATIC);
+		sqlite3_bind_int(addOkStmt, 2, hashId);
 
 		response = sqlite3_step(addOkStmt);
 
