@@ -28,6 +28,7 @@ public:
 	struct db_data {
 		db_data() : filePath(""), pHash(0), sha256(""), reason(""), status(UNKNOWN) {};
 		db_data(fs::path path) : filePath(path), pHash(0), sha256(""), reason(""), status(UNKNOWN) {};
+		db_data(fs::path path, std::string sha, int64_t ph) : filePath(path), pHash(ph), sha256(sha), reason(""), status(OK) {};
 
 		boost::filesystem::path filePath;
 		uint64_t pHash;
