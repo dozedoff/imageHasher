@@ -135,7 +135,7 @@ void Database::updateSchema() {
 			}
 
 			// create hash table
-			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` VARCHAR NOT NULL);"));
+			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` BIGINT NOT NULL);"));
 			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `hash_sha_index` ON `hash` (`sha256`);"));
 			exec(const_cast<char *>("CREATE INDEX IF NOT EXISTS `hash_phash_index` ON `hash` (`pHash`);"));
 
@@ -149,11 +149,11 @@ void Database::updateSchema() {
 			exec(const_cast<char *>("ALTER TABLE `filterrecord` ADD COLUMN `hash_id` INTEGER NOT NULL DEFAULT 0"));
 
 			// populate hash table with existing hash data
-			exec(const_cast<char *>("INSERT INTO `hash` (sha256,pHash) SELECT DISTINCT `sha256`,`pHash` FROM `imagerecord`;"));
+			exec(const_cast<char *>("INSERT OR IGNORE INTO `hash` (sha256,pHash) SELECT DISTINCT `sha256`,`pHash` FROM `imagerecord`;"));
 
 			// link tables by ID
-			exec(const_cast<char *>("UPDATE imagerecord SET hash_id = (SELECT id FROM hash WHERE imagerecord.sha256 = hash.sha256);"));
-			exec(const_cast<char *>("UPDATE filterrecord SET hash_id = (SELECT id FROM hash WHERE filterrecord.pHash = hash.pHash);"));
+			exec(const_cast<char *>("UPDATE OR IGNORE imagerecord SET hash_id = (SELECT id FROM hash WHERE imagerecord.sha256 = hash.sha256);"));
+			exec(const_cast<char *>("UPDATE OR IGNORE filterrecord SET hash_id = (SELECT id FROM hash WHERE filterrecord.pHash = hash.pHash);"));
 
 			// create temp tables
 			exec(const_cast<char *>("CREATE TEMP TABLE `imagerecord_new` (`path` VARCHAR NOT NULL , `hash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
