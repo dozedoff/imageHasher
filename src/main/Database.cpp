@@ -134,54 +134,61 @@ void Database::updateSchema() {
 				throw std::runtime_error("DB contains empty SHA rows");
 			}
 
-			// create hash table
-			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '', `pHash` BIGINT NOT NULL);"));
-			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `hash_sha_index` ON `hash` (`sha256`);"));
-			exec(const_cast<char *>("CREATE INDEX IF NOT EXISTS `hash_phash_index` ON `hash` (`pHash`);"));
+			// create sha table
+			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `sha_hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '');"));
+			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `sha_hash_index` ON `sha_hash` (`sha256`);"));
 
-			// add the default record
-			exec(const_cast<char *>("INSERT OR IGNORE INTO `hash` (`id`,`sha256`,`pHash`) VALUES (0,'','');"));
+			// create pHash table
+			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `phash_hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `pHash` BIGINT NOT NULL);"));
+			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `phash_hash_index` ON `phash_hash` (`pHash`);"));
 
-			// add ID column to imagerecord
-			exec(const_cast<char *>("ALTER TABLE `imagerecord` ADD COLUMN `hash_id` INTEGER NOT NULL DEFAULT 0"));
+			// add ID columns to imagerecord
+			exec(const_cast<char *>("ALTER TABLE `imagerecord` ADD COLUMN `sha_id` INTEGER NOT NULL DEFAULT 0"));
+			exec(const_cast<char *>("ALTER TABLE `imagerecord` ADD COLUMN `phash_id` INTEGER NOT NULL DEFAULT 0"));
 
-			// add ID column to filterrecord
-			exec(const_cast<char *>("ALTER TABLE `filterrecord` ADD COLUMN `hash_id` INTEGER NOT NULL DEFAULT 0"));
+			// add ID columns to filterrecord
+			exec(const_cast<char *>("ALTER TABLE `filterrecord` ADD COLUMN `phash_id` INTEGER NOT NULL DEFAULT 0"));
 
-			// populate hash table with existing hash data
-			exec(const_cast<char *>("INSERT OR IGNORE INTO `hash` (sha256,pHash) SELECT DISTINCT `sha256`,`pHash` FROM `imagerecord`;"));
+			// populate sha_hash table with existing hash data
+			exec(const_cast<char *>("INSERT INTO `sha_hash` (sha256) SELECT DISTINCT `sha256` FROM `imagerecord`;"));
+
+			// populate phash_hash table with existing hash data
+			exec(const_cast<char *>("INSERT INTO `phash_hash` (pHash) SELECT DISTINCT `pHash` FROM `imagerecord` UNION SELECT DISTINCT `pHash` FROM `filterrecord`;"));
 
 			// link tables by ID
-			exec(const_cast<char *>("UPDATE OR IGNORE imagerecord SET hash_id = (SELECT id FROM hash WHERE imagerecord.sha256 = hash.sha256);"));
-			exec(const_cast<char *>("UPDATE OR IGNORE filterrecord SET hash_id = (SELECT id FROM hash WHERE filterrecord.pHash = hash.pHash);"));
+			exec(const_cast<char *>("UPDATE imagerecord SET sha_id = (SELECT id FROM sha_hash WHERE imagerecord.sha256 = sha_hash.sha256);"));
+
+			exec(const_cast<char *>("UPDATE filterrecord SET phash_id = (SELECT id FROM phash_hash WHERE filterrecord.pHash = phash_hash.pHash);"));
+			exec(const_cast<char *>("UPDATE imagerecord SET phash_id = (SELECT id FROM phash_hash WHERE imagerecord.pHash = phash_hash.pHash);"));
 
 			// create temp tables
-			exec(const_cast<char *>("CREATE TEMP TABLE `imagerecord_new` (`path` VARCHAR NOT NULL , `hash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
-			exec(const_cast<char *>("CREATE TEMP TABLE `filterrecord_new` (`hash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`hash_id`) );"));
+			exec(const_cast<char *>("CREATE TEMP TABLE `imagerecord_new` (`path` VARCHAR NOT NULL, `sha_id` INTEGER NOT NULL DEFAULT 0 , `phash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
+			exec(const_cast<char *>("CREATE TEMP TABLE `filterrecord_new` (`phash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`phash_id`) );"));
 
 			// copy data
-			exec(const_cast<char *>("INSERT INTO `imagerecord_new` (`path`,`hash_id`) SELECT `path`,`hash_id` FROM `imagerecord`;"));
-			exec(const_cast<char *>("INSERT INTO `filterrecord_new` (`hash_id`,`reason`) SELECT `hash_id`,`reason` FROM `filterrecord`;"));
+			exec(const_cast<char *>("INSERT INTO `imagerecord_new` (`path`, `sha_id`,`phash_id`) SELECT `path`, `sha_id`,`phash_id` FROM `imagerecord`;"));
+			exec(const_cast<char *>("INSERT INTO `filterrecord_new` (`phash_id`,`reason`) SELECT `phash_id`,`reason` FROM `filterrecord`;"));
 
 			// drop old tables
 			exec(const_cast<char *>("DROP TABLE `imagerecord`;"));
 			exec(const_cast<char *>("DROP TABLE `filterrecord`;"));
 
 			// create new tables
-			exec(const_cast<char *>("CREATE TABLE `imagerecord` (`path` VARCHAR NOT NULL , `hash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
-			exec(const_cast<char *>("CREATE TABLE `filterrecord` (`hash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`hash_id`) );"));
+			exec(const_cast<char *>("CREATE TABLE `imagerecord` (`path` VARCHAR NOT NULL, `sha_id` INTEGER NOT NULL DEFAULT 0 , `phash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
+			exec(const_cast<char *>("CREATE TABLE `filterrecord` (`phash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`phash_id`) );"));
 
 			// restore data
-			exec(const_cast<char *>("INSERT INTO `imagerecord` (`path`,`hash_id`) SELECT `path`,`hash_id` FROM `imagerecord_new`;"));
-			exec(const_cast<char *>("INSERT INTO `filterrecord` (`hash_id`,`reason`) SELECT `hash_id`,`reason` FROM `filterrecord_new`;"));
+			exec(const_cast<char *>("INSERT INTO `imagerecord` (`path`, `sha_id`,`phash_id`) SELECT `path`, `sha_id`,`phash_id` FROM `imagerecord_new`;"));
+			exec(const_cast<char *>("INSERT INTO `filterrecord` (`phash_id`,`reason`) SELECT `phash_id`,`reason` FROM `filterrecord_new`;"));
 
 			// drop temp tables
 			exec(const_cast<char *>("DROP TABLE `imagerecord_new`;"));
 			exec(const_cast<char *>("DROP TABLE `filterrecord_new`;"));
 
 			// create indexes
-			exec(const_cast<char *>("CREATE INDEX `filterrecord_hashid_index` ON `filterrecord` (`hash_id`);"));
-			exec(const_cast<char *>("CREATE INDEX `imagerecord_hashid_index` ON `imagerecord` (`hash_id`);"));
+			exec(const_cast<char *>("CREATE INDEX `filterrecord_phash_index` ON `filterrecord` (`phash_id`);"));
+			exec(const_cast<char *>("CREATE INDEX `imagerecord_phash_index` ON `imagerecord` (`phash_id`);"));
+			exec(const_cast<char *>("CREATE INDEX `imagerecord_sha_index` ON `imagerecord` (`sha_id`);"));
 
 			break;
 
