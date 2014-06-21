@@ -400,7 +400,7 @@ void Database::addToBatch(db_data data) {
 		}
 
 		if(hashId == -1) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " unable to add hash entry");
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " "<< sqlite3_errmsg(db));
 			recordsWritten--;
 			return;
 		}
@@ -411,9 +411,10 @@ void Database::addToBatch(db_data data) {
 		response = sqlite3_step(addOkStmt);
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " " << sqlite3_errmsg(db));
 			recordsWritten--;
 		}
+
 		sqlite3_reset(addOkStmt);
 		break;
 
@@ -426,7 +427,7 @@ void Database::addToBatch(db_data data) {
 		response = sqlite3_step(addInvalidStmt);
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath);
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " " << sqlite3_errmsg(db));
 			recordsWritten--;
 		}
 
@@ -439,7 +440,7 @@ void Database::addToBatch(db_data data) {
 		response = sqlite3_step(addFilterStmt);
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason);
+			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason << sqlite3_errmsg(db));
 		}
 
 		sqlite3_reset(addFilterStmt);
