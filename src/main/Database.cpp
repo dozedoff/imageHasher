@@ -188,7 +188,7 @@ void Database::updateSchema() {
 			// create indexes
 			exec(const_cast<char *>("CREATE INDEX `filterrecord_phash_index` ON `filterrecord` (`phash_id`);"));
 			exec(const_cast<char *>("CREATE INDEX `imagerecord_phash_index` ON `imagerecord` (`phash_id`);"));
-			exec(const_cast<char *>("CREATE INDEX `imagerecord_sha_index` ON `imagerecord` (`sha_id`);"));
+			exec(const_cast<char *>("CREATE INDEX `imagerecord_sha_phash_index` ON `imagerecord` (`sha_id`, `phash_id`);"));
 
 			break;
 
