@@ -10,19 +10,20 @@
 
 const char *dbName = "imageHasher.db";
 
-const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`hash_id`) VALUES (?,?);";
+const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`sha_id`,`phash_id`) VALUES (?,?,?);";
 const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
-const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`hash_id`, `reason`) VALUES (?,?);";
+const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`phash_id`, `reason`) VALUES (?,?);";
 const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ? UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?;";
 const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
 const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
 const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
-const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `hash` ON `hash_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
-const char *updateSha = "UPDATE `imagerecord` SET `hash_id`=? WHERE `path` = ?;";
-const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
-const char *getPhashQuery = "SELECT `pHash` FROM `imagerecord` AS ir JOIN `hash` AS h ON ir.hash_id=h.id WHERE `path` = ?;";
-const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `hash` WHERE `sha256`= ?;";
-const char *insertHashRecordQuery = "INSERT INTO `hash` (`sha256`,`pHash`) VALUES (?,?);";
+const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `sha_hash` ON `sha_id`= `id` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
+const char *updateSha = "UPDATE `imagerecord` SET `sha_id`=? WHERE `path` = ?;";
+const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `sha_hash` AS h ON ir.sha_id=h.id WHERE `path` = ?;";
+const char *getPhashQuery = "SELECT `pHash` FROM `imagerecord` AS ir JOIN `phash_hash` AS h ON ir.sha_id=h.id WHERE `path` = ?;";
+const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `sha_hash` WHERE `sha256`= ?;";
+const char *insertShaRecordQuery = "INSERT INTO `sha_hash` (`sha256`) VALUES (?);";
+const char *insertpHashRecordQuery = "INSERT INTO `phash_hash` (`pHash`) VALUES (?);";
 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
@@ -472,7 +473,8 @@ void Database::prepareStatements() {
 	createPreparedStatement(updateSha, updateShaStmt);
 	createPreparedStatement(getSHAidQuery,getSHAidQueryStmt);
 
-	createPreparedStatement(insertHashRecordQuery, insertHashRecordQueryStmt);
+	createPreparedStatement(insertShaRecordQuery,insertShaRecordQueryStmt);
+	createPreparedStatement(insertpHashRecordQuery,insertpHashRecordQueryStmt);
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
@@ -625,10 +627,10 @@ int Database::getSHAid(std::string sha) {
 int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 	int rowId = -1;
 
-	sqlite3_bind_text(insertHashRecordQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
-	sqlite3_bind_int64(insertHashRecordQueryStmt, 2, pHash);
+	sqlite3_bind_text(insertShaRecordQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
+	sqlite3_bind_int64(insertpHashRecordQueryStmt, 1, pHash);
 
-	int response = sqlite3_step(insertHashRecordQueryStmt);
+	int response = sqlite3_step(insertShaRecordQueryStmt);
 
 	if (SQLITE_DONE == response) {
 		rowId = sqlite3_last_insert_rowid(db);
@@ -638,7 +640,18 @@ int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 		LOG4CPLUS_ERROR(logger, "Failed to create hash table entry with SHA256: " << sha << " pHash: " << pHash << " reason: " << sql_error);
 	}
 
-	sqlite3_reset(insertHashRecordQueryStmt);
+	response = sqlite3_step(insertpHashRecordQueryStmt);
+
+		if (SQLITE_DONE == response) {
+			rowId = sqlite3_last_insert_rowid(db);
+			LOG4CPLUS_DEBUG(logger, "Created hash table entry with ID:" << rowId << " sha256:" << sha << " phash:" << pHash);
+		}else {
+			std::string sql_error = reinterpret_cast<const char*>(sqlite3_errmsg(db));
+			LOG4CPLUS_ERROR(logger, "Failed to create hash table entry with SHA256: " << sha << " pHash: " << pHash << " reason: " << sql_error);
+		}
+
+	sqlite3_reset(insertShaRecordQueryStmt);
+	sqlite3_reset(insertpHashRecordQueryStmt);
 
 	return rowId;
 }
