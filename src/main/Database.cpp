@@ -635,20 +635,20 @@ int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 
 	if (SQLITE_DONE == response) {
 		rowId = sqlite3_last_insert_rowid(db);
-		LOG4CPLUS_DEBUG(logger, "Created hash table entry with ID:" << rowId << " sha256:" << sha << " phash:" << pHash);
+		LOG4CPLUS_DEBUG(logger, "Created sha table entry with ID:" << rowId << " sha256:" << sha);
 	}else {
 		std::string sql_error = reinterpret_cast<const char*>(sqlite3_errmsg(db));
-		LOG4CPLUS_ERROR(logger, "Failed to create hash table entry with SHA256: " << sha << " pHash: " << pHash << " reason: " << sql_error);
+		LOG4CPLUS_ERROR(logger, "Failed to create sha table entry with SHA256: " << sha << " reason: " << sql_error);
 	}
 
 	response = sqlite3_step(insertpHashRecordQueryStmt);
 
 		if (SQLITE_DONE == response) {
 			rowId = sqlite3_last_insert_rowid(db);
-			LOG4CPLUS_DEBUG(logger, "Created hash table entry with ID:" << rowId << " sha256:" << sha << " phash:" << pHash);
+			LOG4CPLUS_DEBUG(logger, "Created pHash table entry with ID:" << rowId << " phash:" << pHash);
 		}else {
 			std::string sql_error = reinterpret_cast<const char*>(sqlite3_errmsg(db));
-			LOG4CPLUS_ERROR(logger, "Failed to create hash table entry with SHA256: " << sha << " pHash: " << pHash << " reason: " << sql_error);
+			LOG4CPLUS_ERROR(logger, "Failed to create pHash table entry with pHash: " << pHash << " reason: " << sql_error);
 		}
 
 	sqlite3_reset(insertShaRecordQueryStmt);
