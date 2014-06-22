@@ -8,6 +8,9 @@
 #include "../include/Database.hpp"
 #include <string>
 
+#include <odb/database.hxx>
+#include <odb/sqlite/database.hxx>
+
 const char *dbName = "imageHasher.db";
 
 const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`sha_id`,`phash_id`) VALUES (?,?,?);";
@@ -111,6 +114,12 @@ void Database::setupDatabase() {
 		LOG4CPLUS_ERROR(logger, "Database setup failed");
 		throw "Database setup failed";
 	}
+
+//	sqlite3_close(db);
+
+	odb::database *orm;
+	orm = new odb::sqlite::database( "test.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+
 }
 
 void Database::updateSchema() {
