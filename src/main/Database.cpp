@@ -21,7 +21,8 @@ const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` JOIN `sha
 const char *updateSha = "UPDATE `imagerecord` SET `sha_id`=? WHERE `path` = ?;";
 const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` AS ir JOIN `sha_hash` AS h ON ir.sha_id=h.id WHERE `path` = ?;";
 const char *getPhashQuery = "SELECT `pHash` FROM `imagerecord` AS ir JOIN `phash_hash` AS h ON ir.sha_id=h.id WHERE `path` = ?;";
-const char *getSHAidQuery = "SELECT `id`,`sha256` FROM `sha_hash` WHERE `sha256`= ?;";
+const char *getSHAidQuery = "SELECT `id` FROM `sha_hash` WHERE `sha256`= ?;";
+const char *getpHashidQuery = "SELECT `id` FROM `phash_hash` WHERE `pHash`= ?;";
 const char *insertShaRecordQuery = "INSERT INTO `sha_hash` (`sha256`) VALUES (?);";
 const char *insertpHashRecordQuery = "INSERT INTO `phash_hash` (`pHash`) VALUES (?);";
 
@@ -621,6 +622,24 @@ int Database::getSHAid(std::string sha) {
 	}
 
 	sqlite3_reset(getSHAidQueryStmt);
+
+	return row_id;
+}
+
+int Database::getpHashId(long pHash) {
+	int row_id = -1;
+
+	sqlite3_bind_int64(getPhashQueryStmt,1,pHash);
+	int response = sqlite3_step(getPhashQueryStmt);
+
+	LOG4CPLUS_DEBUG(logger, "Getting pHash ID for pHash " << pHash);
+
+	if (SQLITE_ROW == response) {
+		row_id = sqlite3_column_int(getPhashQueryStmt,0);
+		LOG4CPLUS_DEBUG(logger, "Found pHash with ID " << row_id);
+	}
+
+	sqlite3_reset(getPhashQueryStmt);
 
 	return row_id;
 }
