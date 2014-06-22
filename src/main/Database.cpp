@@ -660,6 +660,13 @@ int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 		LOG4CPLUS_ERROR(logger, "Failed to create sha table entry with SHA256: " << sha << " reason: " << sql_error);
 	}
 
+	sqlite3_reset(insertShaRecordQueryStmt);
+
+
+	rowId = getpHashId(pHash);
+
+	if(rowId == -1) {
+
 	response = sqlite3_step(insertpHashRecordQueryStmt);
 
 		if (SQLITE_DONE == response) {
@@ -670,8 +677,8 @@ int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 			LOG4CPLUS_ERROR(logger, "Failed to create pHash table entry with pHash: " << pHash << " reason: " << sql_error);
 		}
 
-	sqlite3_reset(insertShaRecordQueryStmt);
-	sqlite3_reset(insertpHashRecordQueryStmt);
+		sqlite3_reset(insertpHashRecordQueryStmt);
+	}
 
 	return rowId;
 }
