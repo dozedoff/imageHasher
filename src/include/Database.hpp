@@ -9,6 +9,10 @@
 #define DATABASE_HPP_
 
 #include <sqlite3.h>
+
+#include <odb/database.hxx>
+#include <odb/sqlite/database.hxx>
+
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -59,6 +63,8 @@ public:
 
 private:
 	sqlite3 *db;
+	odb::database *orm_db;
+
 	char* errMsg;
 	std::list<db_data> dataA, dataB;
 	std::list<db_data>* currentList;

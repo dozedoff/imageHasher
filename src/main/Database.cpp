@@ -8,8 +8,7 @@
 #include "../include/Database.hpp"
 #include <string>
 
-#include <odb/database.hxx>
-#include <odb/sqlite/database.hxx>
+#include <odb/transaction.hxx>
 
 const char *dbName = "imageHasher.db";
 
@@ -33,6 +32,8 @@ const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
 static const int CURRENT_DB_SCHEMA_VERSION = 2;
+
+using namespace odb;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -75,12 +76,7 @@ void Database::shutdown() {
 }
 
 void Database::exec(const char* command) {
-	sqlite3_exec(db, command, NULL, NULL, &errMsg);
-
-	if(errMsg != NULL) {
-		LOG4CPLUS_WARN(logger, "Exec failed: " << command << " -> " << errMsg);
-		sqlite3_free(errMsg);
-	}
+	orm_db->execute(command);
 }
 
 void Database::init() {
@@ -97,29 +93,26 @@ void Database::init() {
 }
 
 void Database::setupDatabase() {
+	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
-	int ret = sqlite3_open(dbName, &db);
-                exec(const_cast<char *>("PRAGMA page_size = 4096;"));
-                exec(const_cast<char *>("PRAGMA cache_size=10000;"));
-                exec(const_cast<char *>("PRAGMA locking_mode=EXCLUSIVE;"));
-                exec(const_cast<char *>("PRAGMA synchronous=NORMAL;"));
-                exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
-                exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `imagerecord` (`path` VARCHAR NOT NULL , `pHash` BIGINT NOT NULL , PRIMARY KEY (`path`) );"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `filterrecord` (`pHash` BIGINT NOT NULL , `reason` VARCHAR NOT NULL , PRIMARY KEY (`pHash`) );"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
 
-                updateSchema();
-	if(ret) {
-		LOG4CPLUS_ERROR(logger, "Database setup failed");
-		throw "Database setup failed";
-	}
+	transaction t(orm_db->begin());
+/*
+ 	 // TODO get this to work with odb
+	exec(const_cast<char *>("PRAGMA page_size = 4096;"));
+	exec(const_cast<char *>("PRAGMA cache_size=10000;"));
+	exec(const_cast<char *>("PRAGMA locking_mode=EXCLUSIVE;"));
+	exec(const_cast<char *>("PRAGMA synchronous=NORMAL;"));
+	exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
+	exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
+	*/
+	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `imagerecord` (`path` VARCHAR NOT NULL , `pHash` BIGINT NOT NULL , PRIMARY KEY (`path`) );"));
+	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `filterrecord` (`pHash` BIGINT NOT NULL , `reason` VARCHAR NOT NULL , PRIMARY KEY (`pHash`) );"));
+	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
 
-//	sqlite3_close(db);
-
-	odb::database *orm;
-	orm = new odb::sqlite::database( "test.db", SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-
+	t.commit();
+	updateSchema();
 }
 
 void Database::updateSchema() {
