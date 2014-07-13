@@ -71,7 +71,6 @@ void Database::shutdown() {
 		workerThread->interrupt();
 		workerThread->join();
 		LOG4CPLUS_INFO(logger, "Closing database...");
-		sqlite3_close(db);
 	}
 }
 
@@ -219,12 +218,7 @@ void Database::updateSHA256(std::string path, std::string sha){
 		shaId = addHashEntry(sha,pHash);
 	}
 
-	sqlite3_bind_int(updateShaStmt, 1, shaId);
-	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
-
-	sqlite3_step(updateShaStmt);
-
-	sqlite3_reset(updateShaStmt);
+	//TODO implement update sha
 }
 
 void Database::add(db_data data) {
@@ -271,18 +265,9 @@ boost::mutex::scoped_lock lock(dbMutex);
 
 	LOG4CPLUS_DEBUG(logger, "Looking for file " << path);
 
-	sqlite3_bind_text(checkExistsStmt, 1, path, pathSize, SQLITE_STATIC);
-	sqlite3_bind_text(checkExistsStmt, 2, path, pathSize, SQLITE_STATIC);
+	//TODO implement entry exists
 
-	sqlite3_step(checkExistsStmt);
-	int response = sqlite3_column_int(checkExistsStmt, 0);
-	sqlite3_reset(checkExistsStmt);
-
-	if (response == 1) {
-		return true;
-	} else {
-		return false;
-	}
+	return false;
 }
 
 bool Database::entryExists(db_data data) {
@@ -294,18 +279,7 @@ bool Database::hasSHA(fs::path filepath) {
 
 	LOG4CPLUS_DEBUG(logger, "Looking if " << filepath << " has SHA");
 
-	sqlite3_bind_text(checkSHAStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC);
-
-
-	sqlite3_step(checkSHAStmt);
-		int response = sqlite3_column_int(checkSHAStmt, 0);
-		sqlite3_reset(checkSHAStmt);
-
-		if (response == 1) {
-			return true;
-		} else {
-			return false;
-		}
+	//TODO implement has sha
 
 	return false;
 }
@@ -321,42 +295,19 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
 	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(pruneQueryStmt, 1, path, pathSize, SQLITE_STATIC );
-	sqlite3_bind_text(pruneQueryStmt, 2, path, pathSize, SQLITE_STATIC );
 
-	response = sqlite3_step(pruneQueryStmt);
-
-	while (SQLITE_ROW == response) {
-		std::string resultPath;
-		resultPath.append(reinterpret_cast<const char*>(sqlite3_column_text(pruneQueryStmt, 0)));
-		fs::path p(resultPath);
-		filePaths.push_back(p);
-
-		response = sqlite3_step(pruneQueryStmt);
-	}
-
-	sqlite3_reset(pruneQueryStmt);
+	//TODO implement get file with path
 
 	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
 	return filePaths;
 }
 
 void Database::startTransaction() {
-	int response = sqlite3_step(startTrStmt);
-	sqlite3_reset(startTrStmt);
-	if (response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger,
-				"Failed to start transaction: " << sqlite3_errmsg(db));
-	}
+	//TODO implement start transaction
 }
 
 void Database::commitTransaction() {
-	int response = sqlite3_step(commitTrStmt);
-	sqlite3_reset(commitTrStmt);
-	if (response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger,
-				"Failed to commit transaction: " << sqlite3_errmsg(db));
-	}
+	//TODO implement commit transaction
 }
 
 void Database::prunePath(std::list<fs::path> filePaths) {
@@ -371,16 +322,7 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 		int pathSize = ite->string().size();
 		int response = 0;
 
-		sqlite3_bind_text(pruneDeleteImageStmt, 1, path, pathSize, SQLITE_TRANSIENT);
-		sqlite3_bind_text(pruneDeleteBadFileStmt, 1, path, pathSize, SQLITE_TRANSIENT);
-
-		response = sqlite3_step(pruneDeleteImageStmt);
-		if(SQLITE_DONE != response) {allOk = false;}
-		response = sqlite3_step(pruneDeleteBadFileStmt);
-		if(SQLITE_DONE != response) {allOk = false;}
-
-		sqlite3_reset(pruneDeleteImageStmt);
-		sqlite3_reset(pruneDeleteBadFileStmt);
+		//TODO implement prunePath
 	}
 
 	commitTransaction();
@@ -403,22 +345,18 @@ void Database::addToBatch(db_data data) {
 		}
 
 		if(hashId == -1) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " "<< sqlite3_errmsg(db));
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
 			recordsWritten--;
 			return;
 		}
 
-		sqlite3_bind_text(addOkStmt, 1, data.filePath.c_str(), data.filePath.string().size(), SQLITE_STATIC );
-		sqlite3_bind_int(addOkStmt, 2, hashId);
-
-		response = sqlite3_step(addOkStmt);
+		//TODO add new record
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash << " " << sqlite3_errmsg(db));
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
 			recordsWritten--;
 		}
 
-		sqlite3_reset(addOkStmt);
 		break;
 
 	case SHA:
@@ -426,27 +364,22 @@ void Database::addToBatch(db_data data) {
 		break;
 
 	case INVALID:
-		sqlite3_bind_text(addInvalidStmt, 1, data.filePath.c_str(), data.filePath.string().size(), SQLITE_STATIC );
-		response = sqlite3_step(addInvalidStmt);
+		//TODO add invalid record
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " " << sqlite3_errmsg(db));
+			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath);
 			recordsWritten--;
 		}
 
-		sqlite3_reset(addInvalidStmt);
 		break;
 
 	case FILTER:
-		sqlite3_bind_int64(addFilterStmt, 1, data.pHash);
-		sqlite3_bind_text(addFilterStmt, 2, data.reason.c_str(), data.reason.size(), SQLITE_STATIC);
-		response = sqlite3_step(addFilterStmt);
+		//TODO add filter record
 
 		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason << sqlite3_errmsg(db));
+			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason);
 		}
 
-		sqlite3_reset(addFilterStmt);
 		break;
 
 	default:
@@ -482,14 +415,7 @@ void Database::prepareStatements() {
 }
 
 void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
-	int error = 0;
-
-	error = sqlite3_prepare_v2(db, query, strlen(query), &stmt, NULL);
-
-	if (SQLITE_OK != error) {
-		LOG4CPLUS_ERROR(logger, "Failed to prepare statement " << query << " -> " << error);
-		throw "Prepare statement failed";
-	}
+	//TODO implement create prepared statements
 }
 
 void Database::doWork() {
@@ -516,41 +442,19 @@ unsigned int Database::getRecordsWritten() {
 }
 
 std::string Database::getSHA(fs::path filepath) {
+	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
 
-	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(getSHAqueryStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC );
-
-	int response = sqlite3_step(getSHAqueryStmt);
-	std::string sha;
-
-	if (SQLITE_ROW == response) {
-		std::string resultPath;
-		sha = (reinterpret_cast<const char*>(sqlite3_column_text(getSHAqueryStmt, 0)));
-		LOG4CPLUS_DEBUG(logger, "Found SHA " << sha << " for file " << filepath);
-	}
-
-	sqlite3_reset(getSHAqueryStmt);
+	//TODO implement getSHA
 
 	return sha;
 }
 
 int64_t Database::getPhash(fs::path filepath) {
+	int pHash = -1;
 	LOG4CPLUS_DEBUG(logger, "Getting pHash for path " << filepath);
 
-	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(getPhashQueryStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC );
-
-	int response = sqlite3_step(getPhashQueryStmt);
-	int64_t pHash = 0;
-
-	if (SQLITE_ROW == response) {
-		std::string resultPath;
-		pHash = sqlite3_column_int64(getPhashQueryStmt, 0);
-		LOG4CPLUS_DEBUG(logger, "Found pHash " << pHash << " for file " << filepath);
-	}
-
-	sqlite3_reset(getPhashQueryStmt);
+	//TODO implement get phash
 
 	return pHash;
 }
@@ -568,12 +472,8 @@ int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,c
 
 int Database::getUserSchemaVersion() {
 	int dbVersion = -1;
-	sqlite3_exec(db, "PRAGMA user_version;", userVersionCallback, &dbVersion, &errMsg);
 
-	if(errMsg != NULL) {
-		LOG4CPLUS_WARN(logger, "Failed to get user version" << " -> " << errMsg);
-		sqlite3_free(errMsg);
-	}
+	//TODO implement get user schema version
 
 	return dbVersion;
 }
@@ -591,12 +491,8 @@ int emptySHAcheckCallback(void* emptyShaRows,int numOfresults,char** valuesAsStr
 
 int Database::getEmptyShaRows() {
 	int emptyShaRows = -1;
-	sqlite3_exec(db, "SELECT COUNT(*) FROM `imagerecord` WHERE `sha256`='';", emptySHAcheckCallback, &emptyShaRows, &errMsg);
 
-	if(errMsg != NULL) {
-		LOG4CPLUS_WARN(logger, "Failed to get empty sha rows" << " -> " << errMsg);
-		sqlite3_free(errMsg);
-	}
+	//TODO implement get empty sha rows
 
 	return emptyShaRows;
 }
@@ -613,17 +509,7 @@ void Database::setUserSchemaVersion(int version) {
 int Database::getSHAid(std::string sha) {
 	int row_id = -1;
 
-	sqlite3_bind_text(getSHAidQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
-	int response = sqlite3_step(getSHAidQueryStmt);
-
-	LOG4CPLUS_DEBUG(logger, "Getting SHA ID for sha " << sha);
-
-	if (SQLITE_ROW == response) {
-		row_id = sqlite3_column_int(getSHAidQueryStmt,0);
-		LOG4CPLUS_DEBUG(logger, "Found SHA with ID " << row_id);
-	}
-
-	sqlite3_reset(getSHAidQueryStmt);
+	//TODO implement get sha id
 
 	return row_id;
 }
@@ -631,17 +517,7 @@ int Database::getSHAid(std::string sha) {
 int Database::getpHashId(long pHash) {
 	int row_id = -1;
 
-	sqlite3_bind_int64(getPhashQueryStmt,1,pHash);
-	int response = sqlite3_step(getPhashQueryStmt);
-
-	LOG4CPLUS_DEBUG(logger, "Getting pHash ID for pHash " << pHash);
-
-	if (SQLITE_ROW == response) {
-		row_id = sqlite3_column_int(getPhashQueryStmt,0);
-		LOG4CPLUS_DEBUG(logger, "Found pHash with ID " << row_id);
-	}
-
-	sqlite3_reset(getPhashQueryStmt);
+	//TODO implement get pHashId
 
 	return row_id;
 }
@@ -649,38 +525,7 @@ int Database::getpHashId(long pHash) {
 int Database::addHashEntry(std::string sha, u_int64_t pHash) {
 	int rowId = -1;
 
-	sqlite3_bind_text(insertShaRecordQueryStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC );
-	sqlite3_bind_int64(insertpHashRecordQueryStmt, 1, pHash);
-
-	int response = sqlite3_step(insertShaRecordQueryStmt);
-
-	if (SQLITE_DONE == response) {
-		rowId = sqlite3_last_insert_rowid(db);
-		LOG4CPLUS_DEBUG(logger, "Created sha table entry with ID:" << rowId << " sha256:" << sha);
-	}else {
-		std::string sql_error = reinterpret_cast<const char*>(sqlite3_errmsg(db));
-		LOG4CPLUS_ERROR(logger, "Failed to create sha table entry with SHA256: " << sha << " reason: " << sql_error);
-	}
-
-	sqlite3_reset(insertShaRecordQueryStmt);
-
-
-	rowId = getpHashId(pHash);
-
-	if(rowId == -1) {
-
-	response = sqlite3_step(insertpHashRecordQueryStmt);
-
-		if (SQLITE_DONE == response) {
-			rowId = sqlite3_last_insert_rowid(db);
-			LOG4CPLUS_DEBUG(logger, "Created pHash table entry with ID:" << rowId << " phash:" << pHash);
-		}else {
-			std::string sql_error = reinterpret_cast<const char*>(sqlite3_errmsg(db));
-			LOG4CPLUS_ERROR(logger, "Failed to create pHash table entry with pHash: " << pHash << " reason: " << sql_error);
-		}
-
-		sqlite3_reset(insertpHashRecordQueryStmt);
-	}
+	//TODO implement add hash entry
 
 	return rowId;
 }

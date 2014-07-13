@@ -8,8 +8,6 @@
 #ifndef DATABASE_HPP_
 #define DATABASE_HPP_
 
-#include <sqlite3.h>
-
 #include <odb/database.hxx>
 #include <odb/sqlite/database.hxx>
 
@@ -62,7 +60,6 @@ public:
 	int getpHashId(long pHash);
 
 private:
-	sqlite3 *db;
 	odb::database *orm_db;
 
 	char* errMsg;
