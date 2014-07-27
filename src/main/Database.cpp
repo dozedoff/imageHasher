@@ -111,7 +111,6 @@ void Database::setupDatabase() {
 	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
 
 	t.commit();
-	updateSchema();
 }
 
 void Database::updateSchema() {
