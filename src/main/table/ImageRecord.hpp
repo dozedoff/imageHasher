@@ -27,6 +27,8 @@
 
 #include <odb/core.hxx>
 
+#include <string>
+
 namespace imageHasher {
 namespace db {
 namespace table {

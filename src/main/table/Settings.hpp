@@ -28,6 +28,7 @@
 
 #include <odb/core.hxx>
 #include <map>
+#include <string>
 
 namespace db {
 namespace table {

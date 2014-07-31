@@ -27,6 +27,7 @@
 #define FILTERRECORD_HPP_
 
 #include <inttypes.h>
+#include <string>
 
 #include <odb/core.hxx>
 
