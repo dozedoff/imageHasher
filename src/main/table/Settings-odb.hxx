@@ -13,7 +13,7 @@
 
 #include <odb/pre.hxx>
 
-#include "Settings.cpp"
+#include "Settings.hpp"
 
 #include <memory>
 #include <cstddef>

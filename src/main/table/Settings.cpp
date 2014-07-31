@@ -29,5 +29,13 @@
 namespace db {
 namespace table {
 
+	void Settings::set_value(std::string key, std::string value) {
+		this->settings[key] = value;
+	}
+
+	std::string Settings::get_value(std::string key) {
+		return this->settings[key];
+	}
+
 } /* namespace table */
 } /* namespace db */
