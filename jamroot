@@ -22,6 +22,7 @@ build-project commoncpp ;
 alias libs : log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 boost-option odb odb-sqlite commoncpp ;
 
 lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared ;
-exe imageHasher : src/ImageHasher.cpp libs ihcommon : <threading>multi <link>shared ;
-unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon ;
-exe hashUtil : src/HashUtil.cpp libs ihcommon : <threading>multi <link>shared ;
+lib odbtable : [ GLOB src/main/table : *.cxx ] odb odb-sqlite ;
+exe imageHasher : src/ImageHasher.cpp libs ihcommon odbtable : <threading>multi <link>shared ;
+unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon odbtable ;
+exe hashUtil : src/HashUtil.cpp libs ihcommon odbtable : <threading>multi <link>shared ;
