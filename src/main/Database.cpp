@@ -359,6 +359,23 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	return hash;
 }
 
+imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath) {
+	ImageRecord ir;
+
+	transaction t (orm_db->begin());
+
+	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
+
+	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		ir = *itr;
+		break;
+	}
+
+	t.commit();
+
+	return ir;
+}
+
 Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 	Hash hash(sha,pHash);
 	transaction t (orm_db->begin());

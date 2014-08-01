@@ -21,6 +21,9 @@
 
 #include "../main/table/Hash.hpp"
 #include "../main/table/Hash-odb.hxx"
+#include "../main/table/ImageRecord.hpp"
+#include "../main/table/ImageRecord-odb.hxx"
+
 
 namespace fs = boost::filesystem;
 
@@ -58,6 +61,7 @@ public:
 	bool sha_exists(std::string sha);
 	imageHasher::db::table::Hash get_hash(std::string sha);
 	imageHasher::db::table::Hash get_hash(u_int64_t phash);
+	imageHasher::db::table::ImageRecord get_imagerecord(fs::path filepath);
 
 private:
 	odb::database *orm_db;
