@@ -29,6 +29,8 @@
 
 #include <string>
 
+#include "Hash.hpp"
+
 namespace imageHasher {
 namespace db {
 namespace table {
@@ -36,17 +38,18 @@ namespace table {
 #pragma db object table("imagerecord")
 class ImageRecord {
 public:
-	ImageRecord();
+	ImageRecord(std::string path, Hash *hash);
 
 private:
 	#pragma db id auto
-	int id;
+	int image_id;
 
 	std::string path;
-	int sha_id;
-	int phash_id;
+#pragma db value_not_null
+	Hash *hash;
 
 	friend class odb::access;
+	ImageRecord();
 };
 
 } /* namespace table */

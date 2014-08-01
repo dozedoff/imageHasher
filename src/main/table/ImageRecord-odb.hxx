@@ -15,6 +15,8 @@
 
 #include "ImageRecord.hpp"
 
+#include "Hash-odb.hxx"
+
 #include <memory>
 #include <cstddef>
 
@@ -90,9 +92,9 @@ namespace odb
   // ImageRecord
   //
   template <typename A>
-  struct query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >
+  struct pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >
   {
-    // id
+    // image_id
     //
     typedef
     sqlite::query_column<
@@ -100,9 +102,9 @@ namespace odb
         int,
         sqlite::id_integer >::query_type,
       sqlite::id_integer >
-    id_type_;
+    image_id_type_;
 
-    static const id_type_ id;
+    static const image_id_type_ image_id;
 
     // path
     //
@@ -116,7 +118,7 @@ namespace odb
 
     static const path_type_ path;
 
-    // sha_id
+    // hash
     //
     typedef
     sqlite::query_column<
@@ -124,48 +126,25 @@ namespace odb
         int,
         sqlite::id_integer >::query_type,
       sqlite::id_integer >
-    sha_id_type_;
+    hash_type_;
 
-    static const sha_id_type_ sha_id;
-
-    // phash_id
-    //
-    typedef
-    sqlite::query_column<
-      sqlite::value_traits<
-        int,
-        sqlite::id_integer >::query_type,
-      sqlite::id_integer >
-    phash_id_type_;
-
-    static const phash_id_type_ phash_id;
+    static const hash_type_ hash;
   };
 
   template <typename A>
-  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::id_type_
-  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
-  id (A::table_name, "\"id\"", 0);
+  const typename pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::image_id_type_
+  pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  image_id (A::table_name, "\"image_id\"", 0);
 
   template <typename A>
-  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::path_type_
-  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  const typename pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::path_type_
+  pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
   path (A::table_name, "\"path\"", 0);
 
   template <typename A>
-  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::sha_id_type_
-  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
-  sha_id (A::table_name, "\"sha_id\"", 0);
-
-  template <typename A>
-  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::phash_id_type_
-  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
-  phash_id (A::table_name, "\"phash_id\"", 0);
-
-  template <typename A>
-  struct pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >:
-    query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >
-  {
-  };
+  const typename pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::hash_type_
+  pointer_query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  hash (A::table_name, "\"hash\"", 0);
 
   template <>
   class access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >:
@@ -182,10 +161,10 @@ namespace odb
 
     struct image_type
     {
-      // id
+      // image_id
       //
-      long long id_value;
-      bool id_null;
+      long long image_id_value;
+      bool image_id_null;
 
       // path
       //
@@ -193,20 +172,17 @@ namespace odb
       std::size_t path_size;
       bool path_null;
 
-      // sha_id
+      // hash
       //
-      long long sha_id_value;
-      bool sha_id_null;
-
-      // phash_id
-      //
-      long long phash_id_value;
-      bool phash_id_null;
+      long long hash_value;
+      bool hash_null;
 
       std::size_t version;
     };
 
     struct extra_statement_cache_type;
+
+    struct hash_tag;
 
     using object_traits<object_type>::id;
 
@@ -242,7 +218,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 4UL;
+    static const std::size_t column_count = 3UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;
@@ -314,6 +290,99 @@ namespace odb
 
   // ImageRecord
   //
+  template <>
+  struct alias_traits<
+    ::imageHasher::db::table::Hash,
+    id_sqlite,
+    access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::hash_tag>
+  {
+    static const char table_name[];
+  };
+
+  template <>
+  struct query_columns_base< ::imageHasher::db::table::ImageRecord, id_sqlite >
+  {
+    // hash
+    //
+    typedef
+    odb::alias_traits<
+      ::imageHasher::db::table::Hash,
+      id_sqlite,
+      access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::hash_tag>
+    hash_alias_;
+  };
+
+  template <typename A>
+  struct query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >:
+    query_columns_base< ::imageHasher::db::table::ImageRecord, id_sqlite >
+  {
+    // image_id
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        int,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    image_id_type_;
+
+    static const image_id_type_ image_id;
+
+    // path
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        ::std::string,
+        sqlite::id_text >::query_type,
+      sqlite::id_text >
+    path_type_;
+
+    static const path_type_ path;
+
+    // hash
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        int,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    hash_column_type_;
+
+    typedef
+    odb::query_pointer<
+      odb::pointer_query_columns<
+        ::imageHasher::db::table::Hash,
+        id_sqlite,
+        hash_alias_ > >
+    hash_pointer_type_;
+
+    struct hash_type_: hash_pointer_type_, hash_column_type_
+    {
+      hash_type_ (const char* t, const char* c, const char* conv)
+        : hash_column_type_ (t, c, conv)
+      {
+      }
+    };
+
+    static const hash_type_ hash;
+  };
+
+  template <typename A>
+  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::image_id_type_
+  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  image_id (A::table_name, "\"image_id\"", 0);
+
+  template <typename A>
+  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::path_type_
+  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  path (A::table_name, "\"path\"", 0);
+
+  template <typename A>
+  const typename query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::hash_type_
+  query_columns< ::imageHasher::db::table::ImageRecord, id_sqlite, A >::
+  hash (A::table_name, "\"hash\"", 0);
 }
 
 #include "ImageRecord-odb.ixx"

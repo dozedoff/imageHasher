@@ -28,6 +28,11 @@ namespace odb
   // ImageRecord
   //
 
+  const char alias_traits<  ::imageHasher::db::table::Hash,
+    id_sqlite,
+    access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::hash_tag>::
+  table_name[] = "\"hash\"";
+
   struct access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::extra_statement_cache_type
   {
     extra_statement_cache_type (
@@ -52,8 +57,8 @@ namespace odb
           int,
           sqlite::id_integer >::set_value (
         id,
-        i.id_value,
-        i.id_null);
+        i.image_id_value,
+        i.image_id_null);
     }
 
     return id;
@@ -68,7 +73,7 @@ namespace odb
 
     bool grew (false);
 
-    // id
+    // image_id
     //
     t[0UL] = false;
 
@@ -80,13 +85,9 @@ namespace odb
       grew = true;
     }
 
-    // sha_id
+    // hash
     //
     t[2UL] = false;
-
-    // phash_id
-    //
-    t[3UL] = false;
 
     return grew;
   }
@@ -102,13 +103,13 @@ namespace odb
 
     std::size_t n (0);
 
-    // id
+    // image_id
     //
     if (sk != statement_update)
     {
       b[n].type = sqlite::bind::integer;
-      b[n].buffer = &i.id_value;
-      b[n].is_null = &i.id_null;
+      b[n].buffer = &i.image_id_value;
+      b[n].is_null = &i.image_id_null;
       n++;
     }
 
@@ -123,18 +124,11 @@ namespace odb
     b[n].is_null = &i.path_null;
     n++;
 
-    // sha_id
+    // hash
     //
     b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.sha_id_value;
-    b[n].is_null = &i.sha_id_null;
-    n++;
-
-    // phash_id
-    //
-    b[n].type = sqlite::bind::integer;
-    b[n].buffer = &i.phash_id_value;
-    b[n].is_null = &i.phash_id_null;
+    b[n].buffer = &i.hash_value;
+    b[n].is_null = &i.hash_null;
     n++;
   }
 
@@ -160,21 +154,21 @@ namespace odb
 
     bool grew (false);
 
-    // id
+    // image_id
     //
     if (sk == statement_insert)
     {
       int const& v =
-        o.id;
+        o.image_id;
 
       bool is_null (false);
       sqlite::value_traits<
           int,
           sqlite::id_integer >::set_image (
-        i.id_value,
+        i.image_id_value,
         is_null,
         v);
-      i.id_null = is_null;
+      i.image_id_null = is_null;
     }
 
     // path
@@ -196,36 +190,31 @@ namespace odb
       grew = grew || (cap != i.path_value.capacity ());
     }
 
-    // sha_id
+    // hash
     //
     {
-      int const& v =
-        o.sha_id;
+      ::imageHasher::db::table::Hash* const& v =
+        o.hash;
 
-      bool is_null (false);
-      sqlite::value_traits<
-          int,
-          sqlite::id_integer >::set_image (
-        i.sha_id_value,
-        is_null,
-        v);
-      i.sha_id_null = is_null;
-    }
+      typedef object_traits< ::imageHasher::db::table::Hash > obj_traits;
+      typedef odb::pointer_traits< ::imageHasher::db::table::Hash* > ptr_traits;
 
-    // phash_id
-    //
-    {
-      int const& v =
-        o.phash_id;
+      bool is_null (ptr_traits::null_ptr (v));
+      if (!is_null)
+      {
+        const obj_traits::id_type& id (
+          obj_traits::id (ptr_traits::get_ref (v)));
 
-      bool is_null (false);
-      sqlite::value_traits<
-          int,
-          sqlite::id_integer >::set_image (
-        i.phash_id_value,
-        is_null,
-        v);
-      i.phash_id_null = is_null;
+        sqlite::value_traits<
+            obj_traits::id_type,
+            sqlite::id_integer >::set_image (
+          i.hash_value,
+          is_null,
+          id);
+        i.hash_null = is_null;
+      }
+      else
+        i.hash_null = true;
     }
 
     return grew;
@@ -240,18 +229,18 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
 
-    // id
+    // image_id
     //
     {
       int& v =
-        o.id;
+        o.image_id;
 
       sqlite::value_traits<
           int,
           sqlite::id_integer >::set_value (
         v,
-        i.id_value,
-        i.id_null);
+        i.image_id_value,
+        i.image_id_null);
     }
 
     // path
@@ -269,32 +258,35 @@ namespace odb
         i.path_null);
     }
 
-    // sha_id
+    // hash
     //
     {
-      int& v =
-        o.sha_id;
+      ::imageHasher::db::table::Hash*& v =
+        o.hash;
 
-      sqlite::value_traits<
-          int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.sha_id_value,
-        i.sha_id_null);
-    }
+      typedef object_traits< ::imageHasher::db::table::Hash > obj_traits;
+      typedef odb::pointer_traits< ::imageHasher::db::table::Hash* > ptr_traits;
 
-    // phash_id
-    //
-    {
-      int& v =
-        o.phash_id;
+      if (i.hash_null)
+        v = ptr_traits::pointer_type ();
+      else
+      {
+        obj_traits::id_type id;
+        sqlite::value_traits<
+            obj_traits::id_type,
+            sqlite::id_integer >::set_value (
+          id,
+          i.hash_value,
+          i.hash_null);
 
-      sqlite::value_traits<
-          int,
-          sqlite::id_integer >::set_value (
-        v,
-        i.phash_id_value,
-        i.phash_id_null);
+        // If a compiler error points to the line below, then
+        // it most likely means that a pointer used in a member
+        // cannot be initialized from an object pointer.
+        //
+        v = ptr_traits::pointer_type (
+          static_cast<sqlite::database*> (db)->load<
+            obj_traits::object_type > (id));
+      }
     }
   }
 
@@ -315,41 +307,38 @@ namespace odb
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::persist_statement[] =
   "INSERT INTO \"imagerecord\" "
-  "(\"id\", "
+  "(\"image_id\", "
   "\"path\", "
-  "\"sha_id\", "
-  "\"phash_id\") "
+  "\"hash\") "
   "VALUES "
-  "(?, ?, ?, ?)";
+  "(?, ?, ?)";
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::find_statement[] =
   "SELECT "
-  "\"imagerecord\".\"id\", "
+  "\"imagerecord\".\"image_id\", "
   "\"imagerecord\".\"path\", "
-  "\"imagerecord\".\"sha_id\", "
-  "\"imagerecord\".\"phash_id\" "
+  "\"imagerecord\".\"hash\" "
   "FROM \"imagerecord\" "
-  "WHERE \"imagerecord\".\"id\"=?";
+  "WHERE \"imagerecord\".\"image_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::update_statement[] =
   "UPDATE \"imagerecord\" "
   "SET "
   "\"path\"=?, "
-  "\"sha_id\"=?, "
-  "\"phash_id\"=? "
-  "WHERE \"id\"=?";
+  "\"hash\"=? "
+  "WHERE \"image_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::erase_statement[] =
   "DELETE FROM \"imagerecord\" "
-  "WHERE \"id\"=?";
+  "WHERE \"image_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::query_statement[] =
-  "SELECT "
-  "\"imagerecord\".\"id\", "
-  "\"imagerecord\".\"path\", "
-  "\"imagerecord\".\"sha_id\", "
-  "\"imagerecord\".\"phash_id\" "
-  "FROM \"imagerecord\"";
+  "SELECT\n"
+  "\"imagerecord\".\"image_id\",\n"
+  "\"imagerecord\".\"path\",\n"
+  "\"imagerecord\".\"hash\"\n"
+  "FROM \"imagerecord\"\n"
+  "LEFT JOIN \"Hash\" AS \"hash\" ON \"hash\".\"hash_id\"=\"imagerecord\".\"hash\"";
 
   const char access::object_traits_impl< ::imageHasher::db::table::ImageRecord, id_sqlite >::erase_query_statement[] =
   "DELETE FROM \"imagerecord\"";
@@ -379,7 +368,7 @@ namespace odb
     if (init (im, obj, statement_insert))
       im.version++;
 
-    im.id_null = true;
+    im.image_id_null = true;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
@@ -393,7 +382,7 @@ namespace odb
     if (!st.execute ())
       throw object_already_persistent ();
 
-    obj.id = static_cast< id_type > (st.id ());
+    obj.image_id = static_cast< id_type > (st.id ());
 
     callback (db,
               static_cast<const object_type&> (obj),
@@ -416,7 +405,7 @@ namespace odb
       conn.statement_cache ().find_object<object_type> ());
 
     const id_type& id (
-      obj.id);
+      obj.image_id);
     id_image_type& idi (sts.id_image ());
     init (idi, id);
 
@@ -592,7 +581,7 @@ namespace odb
     statements_type::auto_lock l (sts);
 
     const id_type& id  (
-      obj.id);
+      obj.image_id);
 
     if (!find_ (sts, &id))
       return false;
@@ -688,7 +677,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += " ";
+      text += "\n";
       text += q.clause ();
     }
 
@@ -697,7 +686,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        false,
+        true,
         true,
         q.parameters_binding (),
         imb));
@@ -763,7 +752,7 @@ namespace odb
     std::string text (query_statement);
     if (!q.empty ())
     {
-      text += " ";
+      text += "\n";
       text += q.clause ();
     }
 
@@ -776,7 +765,7 @@ namespace odb
       new (shared) select_statement (
         conn,
         text,
-        false,
+        true,
         true,
         r->query.parameters_binding (),
         imb));
@@ -860,10 +849,13 @@ namespace odb
         case 1:
         {
           db.execute ("CREATE TABLE \"imagerecord\" (\n"
-                      "  \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
+                      "  \"image_id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
                       "  \"path\" TEXT NOT NULL,\n"
-                      "  \"sha_id\" INTEGER NOT NULL,\n"
-                      "  \"phash_id\" INTEGER NOT NULL)");
+                      "  \"hash\" INTEGER NULL,\n"
+                      "  CONSTRAINT \"hash_fk\"\n"
+                      "    FOREIGN KEY (\"hash\")\n"
+                      "    REFERENCES \"Hash\" (\"hash_id\")\n"
+                      "    DEFERRABLE INITIALLY DEFERRED)");
           return false;
         }
       }

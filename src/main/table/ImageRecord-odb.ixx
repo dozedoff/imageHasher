@@ -12,7 +12,7 @@ namespace odb
   access::object_traits< ::imageHasher::db::table::ImageRecord >::
   id (const object_type& o)
   {
-    return o.id;
+    return o.image_id;
   }
 
   inline

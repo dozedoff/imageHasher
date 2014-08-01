@@ -30,10 +30,18 @@ namespace db {
 namespace table {
 
 ImageRecord::ImageRecord() {
-	// TODO Auto-generated constructor stub
+	this->image_id = 0;
+	this->path = "";
+	this->hash = NULL;
+}
 
+ImageRecord::ImageRecord(std::string path, Hash *hash) {
+	this->image_id = 0;
+	this->path = path;
+	this->hash = hash;
 }
 
 } /* namespace table */
 } /* namespace db */
 } /* namespace imageHasher */
+
