@@ -87,6 +87,7 @@ private:
 	static int callback(void*, int, char**, char**);
 	imageHasher::db::table::Hash addHashEntry(std::string sha, u_int64_t pHash);
 	void add_record(db_data data);
+	void add_invalid(db_data data);
 };
 
 #endif /* DATABASE_HPP_ */

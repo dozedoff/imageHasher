@@ -219,13 +219,7 @@ void Database::addToBatch(db_data data) {
 		break;
 
 	case INVALID:
-		//TODO add invalid record
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath);
-			recordsWritten--;
-		}
-
+		add_invalid(data);
 		break;
 
 	case FILTER:
@@ -259,6 +253,17 @@ void Database::add_record(db_data data) {
 
 	transaction t(orm_db->begin());
 
+	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
+	orm_db->persist(ir);
+
+	t.commit();
+}
+
+void Database::add_invalid(db_data data) {
+	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
+	recordsWritten--;
+	Hash hash = get_hash("");
+	transaction t(orm_db->begin());
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
 
