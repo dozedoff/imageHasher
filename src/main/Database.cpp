@@ -261,6 +261,11 @@ void Database::add_record(db_data data) {
 		hash = addHashEntry(data.sha256, data.pHash);
 	}
 
+	if(entryExists(data)) {
+		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
+		recordsWritten--;
+	}
+
 	transaction t(orm_db->begin());
 
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
