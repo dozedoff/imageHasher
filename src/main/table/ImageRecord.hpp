@@ -39,7 +39,11 @@ namespace table {
 class ImageRecord {
 public:
 	ImageRecord(std::string path, Hash *hash);
+	ImageRecord();
+
 	Hash get_hash();
+	bool is_valid();
+
 private:
 	#pragma db id auto
 	int image_id;
@@ -49,7 +53,6 @@ private:
 	Hash *hash;
 
 	friend class odb::access;
-	ImageRecord();
 };
 
 } /* namespace table */

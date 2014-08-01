@@ -45,7 +45,14 @@ Hash ImageRecord::get_hash() {
 	return *(this->hash);
 }
 
+bool ImageRecord::is_valid() {
+	if(this->path.empty()) {
+		return false;
+	}else{
+		return true;
+	}
+}
+
 } /* namespace table */
 } /* namespace db */
 } /* namespace imageHasher */
-
