@@ -275,31 +275,6 @@ void Database::addToBatch(db_data data) {
 
 void Database::prepareStatements() {
 	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
-
-	createPreparedStatement(insertImageQuery, addOkStmt);
-	createPreparedStatement(insertInvalidQuery, addInvalidStmt);
-	createPreparedStatement(insertFilterQuery,addFilterStmt);
-	createPreparedStatement(checkExistsQuery, checkExistsStmt);
-	createPreparedStatement(checkSHAQuery,checkSHAStmt);
-	createPreparedStatement(getSHAQuery, getSHAqueryStmt);
-	createPreparedStatement(getPhashQuery,getPhashQueryStmt);
-
-	createPreparedStatement(startTransactionQuery, startTrStmt);
-	createPreparedStatement(commitTransactionQuery, commitTrStmt);
-
-	createPreparedStatement(prunePathQuery, pruneQueryStmt);
-	createPreparedStatement(prunePathDeleteImage, pruneDeleteImageStmt);
-	createPreparedStatement(prunePathDeleteBadFile, pruneDeleteBadFileStmt);
-
-	createPreparedStatement(updateSha, updateShaStmt);
-	createPreparedStatement(getSHAidQuery,getSHAidQueryStmt);
-
-	createPreparedStatement(insertShaRecordQuery,insertShaRecordQueryStmt);
-	createPreparedStatement(insertpHashRecordQuery,insertpHashRecordQueryStmt);
-}
-
-void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
-	//TODO implement create prepared statements
 }
 
 void Database::doWork() {
