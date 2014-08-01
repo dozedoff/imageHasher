@@ -12,13 +12,15 @@
 #include <odb/database.hxx>
 #include <odb/sqlite/database.hxx>
 
-
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/chrono.hpp>
 #include <log4cplus/logger.h>
 #include <log4cplus/loggingmacros.h>
+
+#include "../main/table/Hash.hpp"
+#include "../main/table/Hash-odb.hxx"
 
 namespace fs = boost::filesystem;
 
@@ -54,6 +56,8 @@ public:
 	void prunePath(std::list<fs::path>);
 	void exec(const char*);
 	bool sha_exists(std::string sha);
+	imageHasher::db::table::Hash get_hash(std::string sha);
+	imageHasher::db::table::Hash get_hash(u_int64_t phash);
 
 private:
 	odb::database *orm_db;
@@ -80,7 +84,8 @@ private:
 	static int callback(void*, int, char**, char**);
 	void startTransaction();
 	void commitTransaction();
-	void addHashEntry(std::string sha, u_int64_t pHash);
+	imageHasher::db::table::Hash addHashEntry(std::string sha, u_int64_t pHash);
+	void add_record(db_data data);
 };
 
 #endif /* DATABASE_HPP_ */

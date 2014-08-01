@@ -14,8 +14,6 @@
 
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
-#include "table/Hash.hpp"
-#include "table/Hash-odb.hxx"
 
 const char *dbName = "imageHasher.db";
 
@@ -231,20 +229,7 @@ void Database::addToBatch(db_data data) {
 
 	switch (data.status) {
 	case OK:
-
-		if(hashId == -1) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
-			recordsWritten--;
-			return;
-		}
-
-		//TODO add new record
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
-			recordsWritten--;
-		}
-
+		add_record(data);
 		break;
 
 	case INVALID:
@@ -271,6 +256,21 @@ void Database::addToBatch(db_data data) {
 		throw "Unhandled state encountered";
 		break;
 	}
+}
+
+void Database::add_record(db_data data) {
+	Hash hash = get_hash(data.sha256);
+
+	if (!hash.is_valid()) {
+		hash = addHashEntry(data.sha256, data.pHash);
+	}
+
+	transaction t(orm_db->begin());
+
+	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
+	orm_db->persist(ir);
+
+	t.commit();
 }
 
 void Database::prepareStatements() {
@@ -300,6 +300,8 @@ unsigned int Database::getRecordsWritten() {
 	return recordsWritten;
 }
 
+
+
 std::string Database::getSHA(fs::path filepath) {
 	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
@@ -320,18 +322,8 @@ std::string Database::getSHA(fs::path filepath) {
 }
 
 bool Database::sha_exists(std::string sha) {
-	transaction t (orm_db->begin());
-
-	result<Hash> r (orm_db->query<Hash>(query<Hash>::sha256 == sha));
-
-	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		t.commit();
-		return true;
-	}
-
-	t.commit();
-
-	return false;
+	Hash hash = get_hash(sha);
+	return hash.is_valid();
 }
 
 int64_t Database::getPhash(fs::path filepath) {
@@ -343,9 +335,35 @@ int64_t Database::getPhash(fs::path filepath) {
 	return pHash;
 }
 
-void Database::addHashEntry(std::string sha, u_int64_t pHash) {
+imageHasher::db::table::Hash Database::get_hash(std::string sha) {
+	Hash hash;
+	LOG4CPLUS_DEBUG(logger, "Getting hash for sha " << sha);
+
+	transaction t (orm_db->begin());
+
+	result<Hash> r (orm_db->query<Hash>(query<Hash>::sha256 == sha));
+
+	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		hash = *itr;
+		break;
+	}
+
+	t.commit();
+
+	return hash;
+}
+
+imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
+	Hash hash;
+	//TODO implement me
+	return hash;
+}
+
+Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 	Hash hash(sha,pHash);
 	transaction t (orm_db->begin());
 		orm_db->persist(hash);
 	t.commit();
+
+	return hash;
 }
