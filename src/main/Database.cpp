@@ -150,15 +150,11 @@ int Database::drain() {
 }
 
 bool Database::entryExists(fs::path filePath) {
-boost::mutex::scoped_lock lock(dbMutex);
-	const char* path = filePath.c_str();
-	int pathSize = filePath.string().size();
+	LOG4CPLUS_DEBUG(logger, "Looking for file " << filePath);
 
-	LOG4CPLUS_DEBUG(logger, "Looking for file " << path);
+	ImageRecord ir = get_imagerecord(filePath);
 
-	//TODO implement entry exists
-
-	return false;
+	return ir.is_valid();
 }
 
 bool Database::entryExists(db_data data) {
