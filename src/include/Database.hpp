@@ -80,7 +80,7 @@ private:
 	static int callback(void*, int, char**, char**);
 	void startTransaction();
 	void commitTransaction();
-	int addHashEntry(std::string sha, u_int64_t pHash);
+	void addHashEntry(std::string sha, u_int64_t pHash);
 };
 
 #endif /* DATABASE_HPP_ */

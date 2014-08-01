@@ -368,10 +368,9 @@ int64_t Database::getPhash(fs::path filepath) {
 	return pHash;
 }
 
-int Database::addHashEntry(std::string sha, u_int64_t pHash) {
-	int rowId = -1;
-
-	//TODO implement add hash entry
-
-	return rowId;
+void Database::addHashEntry(std::string sha, u_int64_t pHash) {
+	Hash hash(sha,pHash);
+	transaction t (orm_db->begin());
+		orm_db->persist(hash);
+	t.commit();
 }
