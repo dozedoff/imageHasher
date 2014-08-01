@@ -16,12 +16,1024 @@
 #include <odb/sqlite/connection.hxx>
 #include <odb/sqlite/statement.hxx>
 #include <odb/sqlite/statement-cache.hxx>
+#include <odb/sqlite/simple-object-statements.hxx>
 #include <odb/sqlite/container-statements.hxx>
 #include <odb/sqlite/exceptions.hxx>
 #include <odb/sqlite/prepared-query.hxx>
+#include <odb/sqlite/simple-object-result.hxx>
 
 namespace odb
 {
+  // Settings
+  //
+
+  struct access::object_traits_impl< ::db::table::Settings, id_sqlite >::extra_statement_cache_type
+  {
+    sqlite::container_statements_impl< settings_traits > settings;
+
+    extra_statement_cache_type (
+      sqlite::connection& c,
+      image_type&,
+      sqlite::binding& id,
+      sqlite::binding&)
+    : settings (c, id)
+    {
+    }
+  };
+
+  // settings
+  //
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  select_statement[] =
+  "SELECT "
+  "\"Settings_settings\".\"key\", "
+  "\"Settings_settings\".\"value\" "
+  "FROM \"Settings_settings\" "
+  "WHERE \"Settings_settings\".\"object_id\"=?";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  insert_statement[] =
+  "INSERT INTO \"Settings_settings\" "
+  "(\"object_id\", "
+  "\"key\", "
+  "\"value\") "
+  "VALUES "
+  "(?, ?, ?)";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  delete_statement[] =
+  "DELETE FROM \"Settings_settings\" "
+  "WHERE \"object_id\"=?";
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  bind (sqlite::bind* b,
+        const sqlite::bind* id,
+        std::size_t id_size,
+        data_image_type& d)
+  {
+    using namespace sqlite;
+
+    statement_kind sk (statement_select);
+    ODB_POTENTIALLY_UNUSED (sk);
+
+    size_t n (0);
+
+    // object_id
+    //
+    if (id != 0)
+      std::memcpy (&b[n], id, id_size * sizeof (id[0]));
+    n += id_size;
+
+    // key
+    //
+    b[n].type = sqlite::image_traits<
+      key_type,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = d.key_value.data ();
+    b[n].size = &d.key_size;
+    b[n].capacity = d.key_value.capacity ();
+    b[n].is_null = &d.key_null;
+    n++;
+
+    // value
+    //
+    b[n].type = sqlite::image_traits<
+      value_type,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = d.value_value.data ();
+    b[n].size = &d.value_size;
+    b[n].capacity = d.value_value.capacity ();
+    b[n].is_null = &d.value_null;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  grow (data_image_type& i,
+        bool* t)
+  {
+    bool grew (false);
+
+    // key
+    //
+    if (t[0UL])
+    {
+      i.key_value.capacity (i.key_size);
+      grew = true;
+    }
+
+    // value
+    //
+    if (t[1UL])
+    {
+      i.value_value.capacity (i.value_size);
+      grew = true;
+    }
+
+    if (grew)
+      i.version++;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  init (data_image_type& i,
+        const key_type* k,
+        const value_type& v)
+  {
+    using namespace sqlite;
+
+    statement_kind sk (statement_insert);
+    ODB_POTENTIALLY_UNUSED (sk);
+
+    bool grew (false);
+
+    // key
+    //
+    if (k != 0)
+    {
+      bool is_null (false);
+      std::size_t cap (i.key_value.capacity ());
+      sqlite::value_traits<
+          key_type,
+          sqlite::id_text >::set_image (
+        i.key_value,
+        i.key_size,
+        is_null,
+        *k);
+      i.key_null = is_null;
+      grew = grew || (cap != i.key_value.capacity ());
+    }
+
+    // value
+    //
+    {
+      bool is_null (false);
+      std::size_t cap (i.value_value.capacity ());
+      sqlite::value_traits<
+          value_type,
+          sqlite::id_text >::set_image (
+        i.value_value,
+        i.value_size,
+        is_null,
+        v);
+      i.value_null = is_null;
+      grew = grew || (cap != i.value_value.capacity ());
+    }
+
+    if (grew)
+      i.version++;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  init (key_type& k,
+        value_type& v,
+        const data_image_type& i,
+        database* db)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+
+    // key
+    //
+    {
+      sqlite::value_traits<
+          key_type,
+          sqlite::id_text >::set_value (
+        k,
+        i.key_value,
+        i.key_size,
+        i.key_null);
+    }
+
+    // value
+    //
+    {
+      sqlite::value_traits<
+          value_type,
+          sqlite::id_text >::set_value (
+        v,
+        i.value_value,
+        i.value_size,
+        i.value_null);
+    }
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  insert (const key_type& k, const value_type& v, void* d)
+  {
+    using namespace sqlite;
+
+    statements_type& sts (*static_cast< statements_type* > (d));
+    data_image_type& di (sts.data_image ());
+
+    init (di, &k, v);
+
+    if (sts.data_binding_test_version ())
+    {
+      const binding& id (sts.id_binding ());
+      bind (sts.data_bind (), id.bind, id.count, di);
+      sts.data_binding_update_version ();
+    }
+
+    if (!sts.insert_statement ().execute ())
+      throw object_already_persistent ();
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  select (key_type& k, value_type& v, void* d)
+  {
+    using namespace sqlite;
+    using sqlite::select_statement;
+
+    statements_type& sts (*static_cast< statements_type* > (d));
+    data_image_type& di (sts.data_image ());
+
+    init (k, v, di, &sts.connection ().database ());
+
+    select_statement& st (sts.select_statement ());
+    select_statement::result r (st.fetch ());
+
+    if (r == select_statement::truncated)
+    {
+      grow (di, sts.select_image_truncated ());
+
+      if (sts.data_binding_test_version ())
+      {
+        bind (sts.data_bind (), 0, sts.id_binding ().count, di);
+        sts.data_binding_update_version ();
+        st.refetch ();
+      }
+    }
+
+    return r != select_statement::no_data;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  delete_ (void* d)
+  {
+    using namespace sqlite;
+
+    statements_type& sts (*static_cast< statements_type* > (d));
+    sts.delete_statement ().execute ();
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  persist (const container_type& c,
+           statements_type& sts)
+  {
+    using namespace sqlite;
+
+    functions_type& fs (sts.functions ());
+    container_traits_type::persist (c, fs);
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  load (container_type& c,
+        statements_type& sts)
+  {
+    using namespace sqlite;
+    using sqlite::select_statement;
+
+    const binding& id (sts.id_binding ());
+
+    if (sts.data_binding_test_version ())
+    {
+      bind (sts.data_bind (), id.bind, id.count, sts.data_image ());
+      sts.data_binding_update_version ();
+    }
+
+    select_statement& st (sts.select_statement ());
+    st.execute ();
+    auto_result ar (st);
+    select_statement::result r (st.fetch ());
+
+    if (r == select_statement::truncated)
+    {
+      data_image_type& di (sts.data_image ());
+      grow (di, sts.select_image_truncated ());
+
+      if (sts.data_binding_test_version ())
+      {
+        bind (sts.data_bind (), 0, id.count, di);
+        sts.data_binding_update_version ();
+        st.refetch ();
+      }
+    }
+
+    bool more (r != select_statement::no_data);
+
+    functions_type& fs (sts.functions ());
+    container_traits_type::load (c, more, fs);
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  update (const container_type& c,
+          statements_type& sts)
+  {
+    using namespace sqlite;
+
+    functions_type& fs (sts.functions ());
+    container_traits_type::update (c, fs);
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::settings_traits::
+  erase (statements_type& sts)
+  {
+    using namespace sqlite;
+
+    functions_type& fs (sts.functions ());
+    container_traits_type::erase (fs);
+  }
+
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::id_type
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  id (const image_type& i)
+  {
+    sqlite::database* db (0);
+    ODB_POTENTIALLY_UNUSED (db);
+
+    id_type id;
+    {
+      sqlite::value_traits<
+          ::std::string,
+          sqlite::id_text >::set_value (
+        id,
+        i.id_value,
+        i.id_size,
+        i.id_null);
+    }
+
+    return id;
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  grow (image_type& i,
+        bool* t)
+  {
+    ODB_POTENTIALLY_UNUSED (i);
+    ODB_POTENTIALLY_UNUSED (t);
+
+    bool grew (false);
+
+    // id
+    //
+    if (t[0UL])
+    {
+      i.id_value.capacity (i.id_size);
+      grew = true;
+    }
+
+    return grew;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  bind (sqlite::bind* b,
+        image_type& i,
+        sqlite::statement_kind sk)
+  {
+    ODB_POTENTIALLY_UNUSED (sk);
+
+    using namespace sqlite;
+
+    std::size_t n (0);
+
+    // id
+    //
+    if (sk != statement_update)
+    {
+      b[n].type = sqlite::image_traits<
+        ::std::string,
+        sqlite::id_text>::bind_value;
+      b[n].buffer = i.id_value.data ();
+      b[n].size = &i.id_size;
+      b[n].capacity = i.id_value.capacity ();
+      b[n].is_null = &i.id_null;
+      n++;
+    }
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  bind (sqlite::bind* b, id_image_type& i)
+  {
+    std::size_t n (0);
+    b[n].type = sqlite::image_traits<
+      ::std::string,
+      sqlite::id_text>::bind_value;
+    b[n].buffer = i.id_value.data ();
+    b[n].size = &i.id_size;
+    b[n].capacity = i.id_value.capacity ();
+    b[n].is_null = &i.id_null;
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  init (image_type& i,
+        const object_type& o,
+        sqlite::statement_kind sk)
+  {
+    ODB_POTENTIALLY_UNUSED (i);
+    ODB_POTENTIALLY_UNUSED (o);
+    ODB_POTENTIALLY_UNUSED (sk);
+
+    using namespace sqlite;
+
+    bool grew (false);
+
+    // id
+    //
+    if (sk == statement_insert)
+    {
+      ::std::string const& v =
+        o.id;
+
+      bool is_null (false);
+      std::size_t cap (i.id_value.capacity ());
+      sqlite::value_traits<
+          ::std::string,
+          sqlite::id_text >::set_image (
+        i.id_value,
+        i.id_size,
+        is_null,
+        v);
+      i.id_null = is_null;
+      grew = grew || (cap != i.id_value.capacity ());
+    }
+
+    return grew;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  init (object_type& o,
+        const image_type& i,
+        database* db)
+  {
+    ODB_POTENTIALLY_UNUSED (o);
+    ODB_POTENTIALLY_UNUSED (i);
+    ODB_POTENTIALLY_UNUSED (db);
+
+    // id
+    //
+    {
+      ::std::string& v =
+        o.id;
+
+      sqlite::value_traits<
+          ::std::string,
+          sqlite::id_text >::set_value (
+        v,
+        i.id_value,
+        i.id_size,
+        i.id_null);
+    }
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  init (id_image_type& i, const id_type& id)
+  {
+    bool grew (false);
+    {
+      bool is_null (false);
+      std::size_t cap (i.id_value.capacity ());
+      sqlite::value_traits<
+          ::std::string,
+          sqlite::id_text >::set_image (
+        i.id_value,
+        i.id_size,
+        is_null,
+        id);
+      i.id_null = is_null;
+      grew = grew || (cap != i.id_value.capacity ());
+    }
+
+    if (grew)
+      i.version++;
+  }
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::persist_statement[] =
+  "INSERT INTO \"Settings\" "
+  "(\"id\") "
+  "VALUES "
+  "(?)";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::find_statement[] =
+  "SELECT "
+  "\"Settings\".\"id\" "
+  "FROM \"Settings\" "
+  "WHERE \"Settings\".\"id\"=?";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::erase_statement[] =
+  "DELETE FROM \"Settings\" "
+  "WHERE \"id\"=?";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::query_statement[] =
+  "SELECT "
+  "\"Settings\".\"id\" "
+  "FROM \"Settings\"";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::erase_query_statement[] =
+  "DELETE FROM \"Settings\"";
+
+  const char access::object_traits_impl< ::db::table::Settings, id_sqlite >::table_name[] =
+  "\"Settings\"";
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  persist (database& db, const object_type& obj)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+
+    using namespace sqlite;
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    callback (db,
+              obj,
+              callback_event::pre_persist);
+
+    image_type& im (sts.image ());
+    binding& imb (sts.insert_image_binding ());
+
+    if (init (im, obj, statement_insert))
+      im.version++;
+
+    if (im.version != sts.insert_image_version () ||
+        imb.version == 0)
+    {
+      bind (imb.bind, im, statement_insert);
+      sts.insert_image_version (im.version);
+      imb.version++;
+    }
+
+    insert_statement& st (sts.persist_statement ());
+    if (!st.execute ())
+      throw object_already_persistent ();
+
+    id_image_type& i (sts.id_image ());
+    init (i, obj.id);
+
+    binding& idb (sts.id_image_binding ());
+    if (i.version != sts.id_image_version () || idb.version == 0)
+    {
+      bind (idb.bind, i);
+      sts.id_image_version (i.version);
+      idb.version++;
+    }
+
+    extra_statement_cache_type& esc (sts.extra_statement_cache ());
+
+    // settings
+    //
+    {
+      ::std::map< ::std::basic_string< char >, ::std::basic_string< char > > const& v =
+        obj.settings;
+
+      settings_traits::persist (
+        v,
+        esc.settings);
+    }
+
+    callback (db,
+              obj,
+              callback_event::post_persist);
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  update (database& db, const object_type& obj)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+
+    using namespace sqlite;
+    using sqlite::update_statement;
+
+    callback (db, obj, callback_event::pre_update);
+
+    sqlite::transaction& tr (sqlite::transaction::current ());
+    sqlite::connection& conn (tr.connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    {
+      id_image_type& i (sts.id_image ());
+      init (i, obj.id);
+
+      binding& idb (sts.id_image_binding ());
+      if (i.version != sts.id_image_version () || idb.version == 0)
+      {
+        bind (idb.bind, i);
+        sts.id_image_version (i.version);
+        idb.version++;
+      }
+    }
+
+    extra_statement_cache_type& esc (sts.extra_statement_cache ());
+
+    // settings
+    //
+    {
+      ::std::map< ::std::basic_string< char >, ::std::basic_string< char > > const& v =
+        obj.settings;
+
+      settings_traits::update (
+        v,
+        esc.settings);
+    }
+
+    callback (db, obj, callback_event::post_update);
+    pointer_cache_traits::update (db, obj);
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  erase (database& db, const id_type& id)
+  {
+    using namespace sqlite;
+
+    ODB_POTENTIALLY_UNUSED (db);
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    id_image_type& i (sts.id_image ());
+    init (i, id);
+
+    binding& idb (sts.id_image_binding ());
+    if (i.version != sts.id_image_version () || idb.version == 0)
+    {
+      bind (idb.bind, i);
+      sts.id_image_version (i.version);
+      idb.version++;
+    }
+
+    extra_statement_cache_type& esc (sts.extra_statement_cache ());
+
+    // settings
+    //
+    settings_traits::erase (
+      esc.settings);
+
+    if (sts.erase_statement ().execute () != 1)
+      throw object_not_persistent ();
+
+    pointer_cache_traits::erase (db, id);
+  }
+
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::pointer_type
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  find (database& db, const id_type& id)
+  {
+    using namespace sqlite;
+
+    {
+      pointer_type p (pointer_cache_traits::find (db, id));
+
+      if (!pointer_traits::null_ptr (p))
+        return p;
+    }
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    statements_type::auto_lock l (sts);
+
+    if (l.locked ())
+    {
+      if (!find_ (sts, &id))
+        return pointer_type ();
+    }
+
+    pointer_type p (
+      access::object_factory<object_type, pointer_type>::create ());
+    pointer_traits::guard pg (p);
+
+    pointer_cache_traits::insert_guard ig (
+      pointer_cache_traits::insert (db, id, p));
+
+    object_type& obj (pointer_traits::get_ref (p));
+
+    if (l.locked ())
+    {
+      select_statement& st (sts.find_statement ());
+      ODB_POTENTIALLY_UNUSED (st);
+
+      callback (db, obj, callback_event::pre_load);
+      init (obj, sts.image (), &db);
+      load_ (sts, obj, false);
+      sts.load_delayed (0);
+      l.unlock ();
+      callback (db, obj, callback_event::post_load);
+      pointer_cache_traits::load (ig.position ());
+    }
+    else
+      sts.delay_load (id, obj, ig.position ());
+
+    ig.release ();
+    pg.release ();
+    return p;
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  find (database& db, const id_type& id, object_type& obj)
+  {
+    using namespace sqlite;
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    statements_type::auto_lock l (sts);
+
+    if (!find_ (sts, &id))
+      return false;
+
+    select_statement& st (sts.find_statement ());
+    ODB_POTENTIALLY_UNUSED (st);
+
+    reference_cache_traits::position_type pos (
+      reference_cache_traits::insert (db, id, obj));
+    reference_cache_traits::insert_guard ig (pos);
+
+    callback (db, obj, callback_event::pre_load);
+    init (obj, sts.image (), &db);
+    load_ (sts, obj, false);
+    sts.load_delayed (0);
+    l.unlock ();
+    callback (db, obj, callback_event::post_load);
+    reference_cache_traits::load (pos);
+    ig.release ();
+    return true;
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  reload (database& db, object_type& obj)
+  {
+    using namespace sqlite;
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    statements_type::auto_lock l (sts);
+
+    const id_type& id  (
+      obj.id);
+
+    if (!find_ (sts, &id))
+      return false;
+
+    select_statement& st (sts.find_statement ());
+    ODB_POTENTIALLY_UNUSED (st);
+
+    callback (db, obj, callback_event::pre_load);
+    init (obj, sts.image (), &db);
+    load_ (sts, obj, true);
+    sts.load_delayed (0);
+    l.unlock ();
+    callback (db, obj, callback_event::post_load);
+    return true;
+  }
+
+  bool access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  find_ (statements_type& sts,
+         const id_type* id)
+  {
+    using namespace sqlite;
+
+    id_image_type& i (sts.id_image ());
+    init (i, *id);
+
+    binding& idb (sts.id_image_binding ());
+    if (i.version != sts.id_image_version () || idb.version == 0)
+    {
+      bind (idb.bind, i);
+      sts.id_image_version (i.version);
+      idb.version++;
+    }
+
+    image_type& im (sts.image ());
+    binding& imb (sts.select_image_binding ());
+
+    if (im.version != sts.select_image_version () ||
+        imb.version == 0)
+    {
+      bind (imb.bind, im, statement_select);
+      sts.select_image_version (im.version);
+      imb.version++;
+    }
+
+    select_statement& st (sts.find_statement ());
+
+    st.execute ();
+    auto_result ar (st);
+    select_statement::result r (st.fetch ());
+
+    if (r == select_statement::truncated)
+    {
+      if (grow (im, sts.select_image_truncated ()))
+        im.version++;
+
+      if (im.version != sts.select_image_version ())
+      {
+        bind (imb.bind, im, statement_select);
+        sts.select_image_version (im.version);
+        imb.version++;
+        st.refetch ();
+      }
+    }
+
+    return r != select_statement::no_data;
+  }
+
+  void access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  load_ (statements_type& sts,
+         object_type& obj,
+         bool reload)
+  {
+    ODB_POTENTIALLY_UNUSED (reload);
+
+    extra_statement_cache_type& esc (sts.extra_statement_cache ());
+
+    // settings
+    //
+    {
+      ::std::map< ::std::basic_string< char >, ::std::basic_string< char > >& v =
+        obj.settings;
+
+      settings_traits::load (
+        v,
+        esc.settings);
+    }
+  }
+
+  result< access::object_traits_impl< ::db::table::Settings, id_sqlite >::object_type >
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  query (database&, const query_base_type& q)
+  {
+    using namespace sqlite;
+    using odb::details::shared;
+    using odb::details::shared_ptr;
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    image_type& im (sts.image ());
+    binding& imb (sts.select_image_binding ());
+
+    if (im.version != sts.select_image_version () ||
+        imb.version == 0)
+    {
+      bind (imb.bind, im, statement_select);
+      sts.select_image_version (im.version);
+      imb.version++;
+    }
+
+    std::string text (query_statement);
+    if (!q.empty ())
+    {
+      text += " ";
+      text += q.clause ();
+    }
+
+    q.init_parameters ();
+    shared_ptr<select_statement> st (
+      new (shared) select_statement (
+        conn,
+        text,
+        false,
+        true,
+        q.parameters_binding (),
+        imb));
+
+    st->execute ();
+
+    shared_ptr< odb::object_result_impl<object_type> > r (
+      new (shared) sqlite::object_result_impl<object_type> (
+        q, st, sts, 0));
+
+    return result<object_type> (r);
+  }
+
+  unsigned long long access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  erase_query (database&, const query_base_type& q)
+  {
+    using namespace sqlite;
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+
+    std::string text (erase_query_statement);
+    if (!q.empty ())
+    {
+      text += ' ';
+      text += q.clause ();
+    }
+
+    q.init_parameters ();
+    delete_statement st (
+      conn,
+      text,
+      q.parameters_binding ());
+
+    return st.execute ();
+  }
+
+  odb::details::shared_ptr<prepared_query_impl>
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  prepare_query (connection& c, const char* n, const query_base_type& q)
+  {
+    using namespace sqlite;
+    using odb::details::shared;
+    using odb::details::shared_ptr;
+
+    sqlite::connection& conn (
+      static_cast<sqlite::connection&> (c));
+
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    image_type& im (sts.image ());
+    binding& imb (sts.select_image_binding ());
+
+    if (im.version != sts.select_image_version () ||
+        imb.version == 0)
+    {
+      bind (imb.bind, im, statement_select);
+      sts.select_image_version (im.version);
+      imb.version++;
+    }
+
+    std::string text (query_statement);
+    if (!q.empty ())
+    {
+      text += " ";
+      text += q.clause ();
+    }
+
+    shared_ptr<sqlite::prepared_query_impl> r (
+      new (shared) sqlite::prepared_query_impl (conn));
+    r->name = n;
+    r->execute = &execute_query;
+    r->query = q;
+    r->stmt.reset (
+      new (shared) select_statement (
+        conn,
+        text,
+        false,
+        true,
+        r->query.parameters_binding (),
+        imb));
+
+    return r;
+  }
+
+  odb::details::shared_ptr<result_impl>
+  access::object_traits_impl< ::db::table::Settings, id_sqlite >::
+  execute_query (prepared_query_impl& q)
+  {
+    using namespace sqlite;
+    using odb::details::shared;
+    using odb::details::shared_ptr;
+
+    sqlite::prepared_query_impl& pq (
+      static_cast<sqlite::prepared_query_impl&> (q));
+    shared_ptr<select_statement> st (
+      odb::details::inc_ref (
+        static_cast<select_statement*> (pq.stmt.get ())));
+
+    sqlite::connection& conn (
+      sqlite::transaction::current ().connection ());
+
+    // The connection used by the current transaction and the
+    // one used to prepare this statement must be the same.
+    //
+    assert (&conn == &st->connection ());
+
+    statements_type& sts (
+      conn.statement_cache ().find_object<object_type> ());
+
+    image_type& im (sts.image ());
+    binding& imb (sts.select_image_binding ());
+
+    if (im.version != sts.select_image_version () ||
+        imb.version == 0)
+    {
+      bind (imb.bind, im, statement_select);
+      sts.select_image_version (im.version);
+      imb.version++;
+    }
+
+    pq.query.init_parameters ();
+    st->execute ();
+
+    return shared_ptr<result_impl> (
+      new (shared) sqlite::object_result_impl<object_type> (
+        pq.query, st, sts, 0));
+  }
 }
 
 #include <odb/post.hxx>

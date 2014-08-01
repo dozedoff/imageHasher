@@ -26,13 +26,15 @@
 #ifndef SETTINGS_HPP_
 #define SETTINGS_HPP_
 
-#include <odb/core.hxx>
 #include <map>
 #include <string>
+
+#include <odb/core.hxx>
 
 namespace db {
 namespace table {
 
+#pragma db object
 class Settings {
 public:
 	Settings(std::string id){this->id = id;}
@@ -41,13 +43,14 @@ public:
 	std::string get_value(std::string key);
 
 private:
+	Settings();
+
+	friend class odb::access;
+
 	#pragma db id
 	std::string id;
 
 	std::map<std::string,std::string> settings;
-
-	friend class odb::access;
-	Settings();
 };
 
 } /* namespace table */

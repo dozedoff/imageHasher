@@ -9,6 +9,10 @@
 #include <string>
 
 #include <odb/transaction.hxx>
+#include <odb/result.hxx>
+
+#include "table/Settings.hpp"
+#include "table/Settings-odb.hxx"
 
 const char *dbName = "imageHasher.db";
 
@@ -34,6 +38,7 @@ const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 static const int CURRENT_DB_SCHEMA_VERSION = 2;
 
 using namespace odb;
+using namespace db::table;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -472,7 +477,18 @@ int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,c
 int Database::getUserSchemaVersion() {
 	int dbVersion = -1;
 
-	//TODO implement get user schema version
+	odb::core::transaction t (orm_db->begin());
+
+	result<Settings> r (orm_db->query<Settings>());
+
+	for(odb::result<Settings>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		std::string string_ver = itr->get_value("SchemaVersion");
+		if(! string_ver.empty()) {
+			dbVersion = atoi(string_ver.c_str());
+		}
+	}
+
+	t.commit();
 
 	return dbVersion;
 }

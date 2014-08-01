@@ -8,8 +8,10 @@
 #ifndef DATABASE_HPP_
 #define DATABASE_HPP_
 
+#include <odb/core.hxx>
 #include <odb/database.hxx>
 #include <odb/sqlite/database.hxx>
+
 
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
