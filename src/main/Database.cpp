@@ -11,6 +11,7 @@
 #include <odb/transaction.hxx>
 #include <odb/result.hxx>
 #include <odb/schema-catalog.hxx>
+#include <odb/sqlite/exceptions.hxx>
 
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
@@ -96,9 +97,26 @@ void Database::setupDatabase() {
 
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
 
-	transaction t(orm_db->begin());
+	Hash hash;
+	bool exists = true;
 
-	odb:schema_catalog::create_schema(*orm_db, "", false);
+	transaction t(orm_db->begin());
+	try{
+		exists = orm_db->find(1, hash);
+	}catch(odb::sqlite::database_exception &e){
+		exists = false;
+	}
+	t.commit();
+
+
+
+	if(! exists) {
+		transaction t(orm_db->begin());
+			odb:schema_catalog::create_schema(*orm_db, "", false);
+		t.commit();
+		addHashEntry("",0);
+	}
+
 /*
  	 // TODO get this to work with odb
 	exec(const_cast<char *>("PRAGMA page_size = 4096;"));
@@ -108,8 +126,6 @@ void Database::setupDatabase() {
 	exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
 	exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
 	*/
-
-	t.commit();
 }
 
 void Database::add(db_data data) {
