@@ -10,6 +10,7 @@
 
 #include <odb/transaction.hxx>
 #include <odb/result.hxx>
+#include <odb/schema-catalog.hxx>
 
 #include "table/Settings.hpp"
 #include "table/Settings-odb.hxx"
@@ -102,6 +103,8 @@ void Database::setupDatabase() {
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
 
 	transaction t(orm_db->begin());
+
+	odb:schema_catalog::create_schema(*orm_db, "", false);
 /*
  	 // TODO get this to work with odb
 	exec(const_cast<char *>("PRAGMA page_size = 4096;"));
@@ -111,9 +114,6 @@ void Database::setupDatabase() {
 	exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
 	exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
 	*/
-	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `imagerecord` (`path` VARCHAR NOT NULL , `pHash` BIGINT NOT NULL , PRIMARY KEY (`path`) );"));
-	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `filterrecord` (`pHash` BIGINT NOT NULL , `reason` VARCHAR NOT NULL , PRIMARY KEY (`pHash`) );"));
-	exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
 
 	t.commit();
 }

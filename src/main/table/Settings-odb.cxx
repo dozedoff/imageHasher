@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstring>  // std::memcpy
 
+#include <odb/schema-catalog-impl.hxx>
 
 #include <odb/sqlite/traits.hxx>
 #include <odb/sqlite/database.hxx>
@@ -1034,6 +1035,64 @@ namespace odb
       new (shared) sqlite::object_result_impl<object_type> (
         pq.query, st, sts, 0));
   }
+}
+
+namespace odb
+{
+  static bool
+  create_schema (database& db, unsigned short pass, bool drop)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (pass);
+    ODB_POTENTIALLY_UNUSED (drop);
+
+    if (drop)
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("DROP TABLE IF EXISTS \"Settings_settings\"");
+          db.execute ("DROP TABLE IF EXISTS \"Settings\"");
+          return false;
+        }
+      }
+    }
+    else
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          db.execute ("CREATE TABLE \"Settings\" (\n"
+                      "  \"id\" TEXT NOT NULL PRIMARY KEY)");
+          db.execute ("CREATE TABLE \"Settings_settings\" (\n"
+                      "  \"object_id\" TEXT NOT NULL,\n"
+                      "  \"key\" TEXT NOT NULL,\n"
+                      "  \"value\" TEXT NOT NULL,\n"
+                      "  CONSTRAINT \"object_id_fk\"\n"
+                      "    FOREIGN KEY (\"object_id\")\n"
+                      "    REFERENCES \"Settings\" (\"id\")\n"
+                      "    ON DELETE CASCADE)");
+          db.execute ("CREATE INDEX \"Settings_settings_object_id_i\"\n"
+                      "  ON \"Settings_settings\" (\"object_id\")");
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static const schema_catalog_create_entry
+  create_schema_entry_ (
+    id_sqlite,
+    "",
+    &create_schema);
 }
 
 #include <odb/post.hxx>

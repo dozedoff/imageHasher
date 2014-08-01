@@ -9,6 +9,7 @@
 #include <cassert>
 #include <cstring>  // std::memcpy
 
+#include <odb/schema-catalog-impl.hxx>
 
 #include <odb/sqlite/traits.hxx>
 #include <odb/sqlite/database.hxx>
@@ -736,6 +737,54 @@ namespace odb
       new (shared) sqlite::object_result_impl<object_type> (
         pq.query, st, sts, 0));
   }
+}
+
+namespace odb
+{
+  static bool
+  create_schema (database& db, unsigned short pass, bool drop)
+  {
+    ODB_POTENTIALLY_UNUSED (db);
+    ODB_POTENTIALLY_UNUSED (pass);
+    ODB_POTENTIALLY_UNUSED (drop);
+
+    if (drop)
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          return true;
+        }
+        case 2:
+        {
+          db.execute ("DROP TABLE IF EXISTS \"sha_hash\"");
+          return false;
+        }
+      }
+    }
+    else
+    {
+      switch (pass)
+      {
+        case 1:
+        {
+          db.execute ("CREATE TABLE \"sha_hash\" (\n"
+                      "  \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
+                      "  \"sha256\" TEXT NOT NULL)");
+          return false;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  static const schema_catalog_create_entry
+  create_schema_entry_ (
+    id_sqlite,
+    "",
+    &create_schema);
 }
 
 #include <odb/post.hxx>
