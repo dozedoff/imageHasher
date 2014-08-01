@@ -49,6 +49,14 @@ Hash::Hash() {
 	this->pHash = 0;
 }
 
+bool Hash::is_valid() {
+	if(this->sha256.empty()) {
+		return false;
+	}else{
+		return true;
+	}
+}
+
 } /* namespace table */
 } /* namespace db */
 } /* namespace imageHasher */

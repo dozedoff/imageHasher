@@ -38,8 +38,11 @@ namespace table {
 class Hash {
 public:
 	Hash(std::string sha256, uint64_t pHash);
+	Hash();
+
 	std::string get_sha256();
 	uint64_t get_pHash();
+	bool is_valid();
 
 private:
 #pragma db id auto
@@ -49,7 +52,6 @@ private:
 	std::string sha256;
 
 	friend class odb::access;
-	Hash();
 };
 
 } /* namespace table */
