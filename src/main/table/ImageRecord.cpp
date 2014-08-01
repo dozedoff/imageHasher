@@ -41,6 +41,10 @@ ImageRecord::ImageRecord(std::string path, Hash *hash) {
 	this->hash = hash;
 }
 
+Hash ImageRecord::get_hash() {
+	return *(this->hash);
+}
+
 } /* namespace table */
 } /* namespace db */
 } /* namespace imageHasher */

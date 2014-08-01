@@ -39,7 +39,7 @@ namespace table {
 class ImageRecord {
 public:
 	ImageRecord(std::string path, Hash *hash);
-
+	Hash get_hash();
 private:
 	#pragma db id auto
 	int image_id;

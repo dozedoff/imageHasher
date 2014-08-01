@@ -12,6 +12,9 @@
 #include <odb/result.hxx>
 #include <odb/schema-catalog.hxx>
 
+#include "table/ImageRecord.hpp"
+#include "table/ImageRecord-odb.hxx"
+
 const char *dbName = "imageHasher.db";
 
 const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`sha_id`,`phash_id`) VALUES (?,?,?);";
@@ -34,6 +37,7 @@ const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
 using namespace odb;
+using namespace imageHasher::db::table;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -349,7 +353,17 @@ std::string Database::getSHA(fs::path filepath) {
 	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
 
-	//TODO implement getSHA
+	transaction t (orm_db->begin());
+
+	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
+
+	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		Hash hash = itr->get_hash();
+		sha = hash.get_sha256();
+		break;
+	}
+
+	t.commit();
 
 	return sha;
 }
