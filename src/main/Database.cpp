@@ -135,15 +135,11 @@ int Database::drain() {
 	workList = currentList;
 	flipLists();
 
-	startTransaction();
-
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
 	}
-
-	commitTransaction();
 
 	workList->clear();
 	return drainCount;
@@ -179,20 +175,10 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	return filePaths;
 }
 
-void Database::startTransaction() {
-	//TODO implement start transaction
-}
-
-void Database::commitTransaction() {
-	//TODO implement commit transaction
-}
-
 void Database::prunePath(std::list<fs::path> filePaths) {
 	boost::mutex::scoped_lock lock(dbMutex);
 
 	bool allOk = true;
-
-	startTransaction();
 
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
 		const char* path = ite->c_str();
@@ -201,8 +187,6 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 
 		//TODO implement prunePath
 	}
-
-	commitTransaction();
 
 	if (!allOk) {
 		LOG4CPLUS_WARN(logger, "Failed to delete some file paths");

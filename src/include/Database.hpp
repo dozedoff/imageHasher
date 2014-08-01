@@ -85,8 +85,6 @@ private:
 	void addToBatch(db_data);
 	int executeBatch();
 	static int callback(void*, int, char**, char**);
-	void startTransaction();
-	void commitTransaction();
 	imageHasher::db::table::Hash addHashEntry(std::string sha, u_int64_t pHash);
 	void add_record(db_data data);
 };
