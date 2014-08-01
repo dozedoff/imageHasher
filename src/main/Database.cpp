@@ -238,6 +238,7 @@ void Database::add_record(db_data data) {
 	if(entryExists(data)) {
 		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
 		recordsWritten--;
+		return;
 	}
 
 	transaction t(orm_db->begin());
