@@ -856,6 +856,10 @@ namespace odb
                       "    FOREIGN KEY (\"hash\")\n"
                       "    REFERENCES \"Hash\" (\"hash_id\")\n"
                       "    DEFERRABLE INITIALLY DEFERRED)");
+          db.execute ("CREATE UNIQUE INDEX \"imagerecord_path_i\"\n"
+                      "  ON \"imagerecord\" (\"path\")");
+          db.execute ("CREATE INDEX \"imagerecord_hash_i\"\n"
+                      "  ON \"imagerecord\" (\"hash\")");
           return false;
         }
       }

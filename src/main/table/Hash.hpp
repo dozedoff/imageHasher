@@ -48,6 +48,8 @@ private:
 #pragma db id auto
 	int hash_id;
 
+#pragma db index member(sha256) unique
+#pragma db index member(pHash)
 	uint64_t pHash;
 	std::string sha256;
 

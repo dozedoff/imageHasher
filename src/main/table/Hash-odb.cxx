@@ -818,6 +818,10 @@ namespace odb
                       "  \"hash_id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
                       "  \"pHash\" INTEGER NOT NULL,\n"
                       "  \"sha256\" TEXT NOT NULL)");
+          db.execute ("CREATE UNIQUE INDEX \"Hash_sha256_i\"\n"
+                      "  ON \"Hash\" (\"sha256\")");
+          db.execute ("CREATE INDEX \"Hash_pHash_i\"\n"
+                      "  ON \"Hash\" (\"pHash\")");
           return false;
         }
       }

@@ -48,7 +48,9 @@ private:
 	#pragma db id auto
 	int image_id;
 
+#pragma db index member(path) unique
 	std::string path;
+#pragma db index member(hash)
 #pragma db value_not_null
 	Hash *hash;
 
