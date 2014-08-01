@@ -53,6 +53,7 @@ public:
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
 	void exec(const char*);
+	bool sha_exists(std::string sha);
 
 private:
 	odb::database *orm_db;

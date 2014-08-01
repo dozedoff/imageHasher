@@ -14,6 +14,8 @@
 
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
+#include "table/Hash.hpp"
+#include "table/Hash-odb.hxx"
 
 const char *dbName = "imageHasher.db";
 
@@ -340,6 +342,21 @@ std::string Database::getSHA(fs::path filepath) {
 	t.commit();
 
 	return sha;
+}
+
+bool Database::sha_exists(std::string sha) {
+	transaction t (orm_db->begin());
+
+	result<Hash> r (orm_db->query<Hash>(query<Hash>::sha256 == sha));
+
+	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		t.commit();
+		return true;
+	}
+
+	t.commit();
+
+	return false;
 }
 
 int64_t Database::getPhash(fs::path filepath) {
