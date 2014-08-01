@@ -37,7 +37,7 @@ namespace table {
 #pragma db object
 class Settings {
 public:
-	Settings(std::string id){this->id = id;}
+	Settings(std::string id);
 
 	void set_value(std::string key, std::string value);
 	std::string get_value(std::string key);

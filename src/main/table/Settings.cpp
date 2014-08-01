@@ -28,6 +28,13 @@
 
 namespace db {
 namespace table {
+	Settings::Settings(std::string id) {
+		this->id = id;
+	}
+
+	Settings::Settings() {
+
+	}
 
 	void Settings::set_value(std::string key, std::string value) {
 		this->settings[key] = value;
@@ -39,3 +46,5 @@ namespace table {
 
 } /* namespace table */
 } /* namespace db */
+
+
