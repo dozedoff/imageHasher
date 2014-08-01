@@ -53,7 +53,7 @@ TEST_F(DatabaseTest, writeRecordsWithInvalid) {
 
 	db->shutdown();
 
-	ASSERT_EQ(3, db->getRecordsWritten());
+	ASSERT_EQ(2, db->getRecordsWritten());
 }
 
 TEST_F(DatabaseTest, writeDuplicateRecords) {
