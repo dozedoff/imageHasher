@@ -36,8 +36,6 @@ const char *insertpHashRecordQuery = "INSERT INTO `phash_hash` (`pHash`) VALUES 
 const char *startTransactionQuery = "BEGIN TRANSACTION;";
 const char *commitTransactionQuery = "COMMIT TRANSACTION;";
 
-static const int CURRENT_DB_SCHEMA_VERSION = 2;
-
 using namespace odb;
 using namespace db::table;
 
@@ -52,10 +50,6 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
-}
-
-int Database::getCurrentSchemaVersion() {
-	return CURRENT_DB_SCHEMA_VERSION;
 }
 
 int Database::flush() {
@@ -118,96 +112,6 @@ void Database::setupDatabase() {
 	t.commit();
 }
 
-void Database::updateSchema() {
-	int dbVersion = getUserSchemaVersion();
-	int emptyRows = -1;
-
-	if(dbVersion == CURRENT_DB_SCHEMA_VERSION){
-		LOG4CPLUS_INFO_STR(logger,"DB schema is up to date.");
-		return;
-	}else if(dbVersion > CURRENT_DB_SCHEMA_VERSION) {
-		LOG4CPLUS_ERROR(logger,"DB schema is newer than the current schema, aborting...");
-		throw std::runtime_error("DB schema is newer than the current version");
-	}else{
-		LOG4CPLUS_INFO(logger,"DB schema is out of date, actual: " << dbVersion << " current: " << CURRENT_DB_SCHEMA_VERSION << " updating...");
-
-	switch (dbVersion) {
-		case 0:
-			exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
-		case 1:
-			emptyRows = getEmptyShaRows();
-			if(emptyRows != 0) {
-				LOG4CPLUS_ERROR(logger,"DB contains " << emptyRows << " SHA rows, aborting upgrade");
-				throw std::runtime_error("DB contains empty SHA rows");
-			}
-
-			// create sha table
-			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `sha_hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `sha256` VARCHAR NOT NULL DEFAULT '');"));
-			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `sha_hash_index` ON `sha_hash` (`sha256`);"));
-
-			// create pHash table
-			exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `phash_hash` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `pHash` BIGINT NOT NULL);"));
-			exec(const_cast<char *>("CREATE UNIQUE INDEX IF NOT EXISTS `phash_hash_index` ON `phash_hash` (`pHash`);"));
-
-			// add ID columns to imagerecord
-			exec(const_cast<char *>("ALTER TABLE `imagerecord` ADD COLUMN `sha_id` INTEGER NOT NULL DEFAULT 0"));
-			exec(const_cast<char *>("ALTER TABLE `imagerecord` ADD COLUMN `phash_id` INTEGER NOT NULL DEFAULT 0"));
-
-			// add ID columns to filterrecord
-			exec(const_cast<char *>("ALTER TABLE `filterrecord` ADD COLUMN `phash_id` INTEGER NOT NULL DEFAULT 0"));
-
-			// populate sha_hash table with existing hash data
-			exec(const_cast<char *>("INSERT INTO `sha_hash` (sha256) SELECT DISTINCT `sha256` FROM `imagerecord`;"));
-
-			// populate phash_hash table with existing hash data
-			exec(const_cast<char *>("INSERT INTO `phash_hash` (pHash) SELECT DISTINCT `pHash` FROM `imagerecord` UNION SELECT DISTINCT `pHash` FROM `filterrecord`;"));
-
-			// link tables by ID
-			exec(const_cast<char *>("UPDATE imagerecord SET sha_id = (SELECT id FROM sha_hash WHERE imagerecord.sha256 = sha_hash.sha256);"));
-
-			exec(const_cast<char *>("UPDATE filterrecord SET phash_id = (SELECT id FROM phash_hash WHERE filterrecord.pHash = phash_hash.pHash);"));
-			exec(const_cast<char *>("UPDATE imagerecord SET phash_id = (SELECT id FROM phash_hash WHERE imagerecord.pHash = phash_hash.pHash);"));
-
-			// create temp tables
-			exec(const_cast<char *>("CREATE TEMP TABLE `imagerecord_new` (`path` VARCHAR NOT NULL, `sha_id` INTEGER NOT NULL DEFAULT 0 , `phash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
-			exec(const_cast<char *>("CREATE TEMP TABLE `filterrecord_new` (`phash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`phash_id`) );"));
-
-			// copy data
-			exec(const_cast<char *>("INSERT INTO `imagerecord_new` (`path`, `sha_id`,`phash_id`) SELECT `path`, `sha_id`,`phash_id` FROM `imagerecord`;"));
-			exec(const_cast<char *>("INSERT INTO `filterrecord_new` (`phash_id`,`reason`) SELECT `phash_id`,`reason` FROM `filterrecord`;"));
-
-			// drop old tables
-			exec(const_cast<char *>("DROP TABLE `imagerecord`;"));
-			exec(const_cast<char *>("DROP TABLE `filterrecord`;"));
-
-			// create new tables
-			exec(const_cast<char *>("CREATE TABLE `imagerecord` (`path` VARCHAR NOT NULL, `sha_id` INTEGER NOT NULL DEFAULT 0 , `phash_id` INTEGER NOT NULL DEFAULT 0  , PRIMARY KEY (`path`) );"));
-			exec(const_cast<char *>("CREATE TABLE `filterrecord` (`phash_id` INTEGER NOT NULL DEFAULT 0, `reason` VARCHAR NOT NULL, PRIMARY KEY (`phash_id`) );"));
-
-			// restore data
-			exec(const_cast<char *>("INSERT INTO `imagerecord` (`path`, `sha_id`,`phash_id`) SELECT `path`, `sha_id`,`phash_id` FROM `imagerecord_new`;"));
-			exec(const_cast<char *>("INSERT INTO `filterrecord` (`phash_id`,`reason`) SELECT `phash_id`,`reason` FROM `filterrecord_new`;"));
-
-			// drop temp tables
-			exec(const_cast<char *>("DROP TABLE `imagerecord_new`;"));
-			exec(const_cast<char *>("DROP TABLE `filterrecord_new`;"));
-
-			// create indexes
-			exec(const_cast<char *>("CREATE INDEX `filterrecord_phash_index` ON `filterrecord` (`phash_id`);"));
-			exec(const_cast<char *>("CREATE INDEX `imagerecord_phash_index` ON `imagerecord` (`phash_id`);"));
-			exec(const_cast<char *>("CREATE INDEX `imagerecord_sha_phash_index` ON `imagerecord` (`sha_id`, `phash_id`);"));
-
-			break;
-
-		default:
-			LOG4CPLUS_ERROR(logger,"Unknown schema version " << dbVersion << ", aborting...");
-			throw std::runtime_error("Unknown schema version");
-			break;
-	}
-
-	setUserSchemaVersion(CURRENT_DB_SCHEMA_VERSION);
-	}
-}
 
 void Database::updateSHA256(std::string path, std::string sha){
 	int shaId = getSHAid(sha);
@@ -474,25 +378,6 @@ int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,c
 	return 0;
 }
 
-int Database::getUserSchemaVersion() {
-	int dbVersion = -1;
-
-	odb::core::transaction t (orm_db->begin());
-
-	result<Settings> r (orm_db->query<Settings>());
-
-	for(odb::result<Settings>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		std::string string_ver = itr->get_value("SchemaVersion");
-		if(! string_ver.empty()) {
-			dbVersion = atoi(string_ver.c_str());
-		}
-	}
-
-	t.commit();
-
-	return dbVersion;
-}
-
 int emptySHAcheckCallback(void* emptyShaRows,int numOfresults,char** valuesAsString,char** columnNames) {
 	int rows = -1;
 
@@ -510,15 +395,6 @@ int Database::getEmptyShaRows() {
 	//TODO implement get empty sha rows
 
 	return emptyShaRows;
-}
-
-void Database::setUserSchemaVersion(int version) {
-	std::stringstream command;
-	command << "PRAGMA user_version = ";
-	command << version;
-	command << ";";
-
-	Database::exec(command.str().c_str());
 }
 
 int Database::getSHAid(std::string sha) {

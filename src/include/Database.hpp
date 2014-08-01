@@ -53,10 +53,7 @@ public:
 	int64_t getPhash(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
-	int getUserSchemaVersion();
 	int getEmptyShaRows();
-	void setUserSchemaVersion(int version);
-	static int getCurrentSchemaVersion();
 	void exec(const char*);
 	int getSHAid(std::string sha);
 	int getpHashId(long pHash);
@@ -76,7 +73,6 @@ private:
 
 	void init();
 	void setupDatabase();
-	void updateSchema();
 	int drain();
 	void flipLists();
 	void doWork();

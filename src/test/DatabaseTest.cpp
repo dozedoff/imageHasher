@@ -130,36 +130,6 @@ TEST_F(DatabaseTest, DISABLED_updateSHA) {
 	ASSERT_EQ("foo", shaHash);
 }
 
-TEST_F(DatabaseTest, getDefaultUserSchemaVersion) {
-	int version = db->getUserSchemaVersion();
-
-	ASSERT_EQ(Database::getCurrentSchemaVersion(),version);
-}
-
-TEST_F(DatabaseTest, setUserSchemaVersion) {
-	int version = db->getUserSchemaVersion();
-
-	// guard
-	ASSERT_EQ(Database::getCurrentSchemaVersion(), version);
-
-	db->setUserSchemaVersion(42);
-	version = db->getUserSchemaVersion();
-
-	ASSERT_EQ(42, version);
-}
-
-TEST_F(DatabaseTest, dbNewerThanCurrent) {
-	db->exec("PRAGMA locking_mode = NORMAL;");
-
-	db->setUserSchemaVersion(42);
-	int version = db->getUserSchemaVersion();
-
-	ASSERT_EQ(42, version);
-
-	db->shutdown();
-	ASSERT_THROW(Database db2(dbPath->c_str()), std::runtime_error);
-}
-
 TEST_F(DatabaseTest, getSHAidNoEntries) {
 	int shaId = db->getSHAid("foo");
 
