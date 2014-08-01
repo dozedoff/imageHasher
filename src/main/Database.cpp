@@ -112,23 +112,6 @@ void Database::setupDatabase() {
 	t.commit();
 }
 
-
-void Database::updateSHA256(std::string path, std::string sha){
-	int shaId = getSHAid(sha);
-
-	LOG4CPLUS_DEBUG(logger,"Found ID "<< shaId << " for sha " << sha);
-
-	if((shaId == -1) || (shaId == 0)) {
-		LOG4CPLUS_ERROR(logger,"No pHash available, unable to update SHA");
-		return;
-	}else{
-		int64_t pHash = getPhash(path);
-		shaId = addHashEntry(sha,pHash);
-	}
-
-	//TODO implement update sha
-}
-
 void Database::add(db_data data) {
 	boost::mutex::scoped_lock lock(flipMutex);
 	currentList->push_back(data);
@@ -246,11 +229,6 @@ void Database::addToBatch(db_data data) {
 
 	switch (data.status) {
 	case OK:
-		hashId = getSHAid(data.sha256);
-
-		if(hashId == -1) {
-			hashId = addHashEntry(data.sha256, data.pHash);
-		}
 
 		if(hashId == -1) {
 			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
@@ -265,10 +243,6 @@ void Database::addToBatch(db_data data) {
 			recordsWritten--;
 		}
 
-		break;
-
-	case SHA:
-		updateSHA256(data.filePath.string(), data.sha256);
 		break;
 
 	case INVALID:
@@ -375,52 +349,6 @@ int64_t Database::getPhash(fs::path filepath) {
 	//TODO implement get phash
 
 	return pHash;
-}
-
-int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,char** columnNames) {
-	int version = -1;
-
-	if(numOfresults == 1) {
-		version = atoi(valuesAsString[0]);
-		*((int*)dbVersion) = version;
-	}
-
-	return 0;
-}
-
-int emptySHAcheckCallback(void* emptyShaRows,int numOfresults,char** valuesAsString,char** columnNames) {
-	int rows = -1;
-
-	if(numOfresults == 1) {
-		rows = atoi(valuesAsString[0]);
-		*((int*)emptyShaRows) = rows;
-	}
-
-	return 0;
-}
-
-int Database::getEmptyShaRows() {
-	int emptyShaRows = -1;
-
-	//TODO implement get empty sha rows
-
-	return emptyShaRows;
-}
-
-int Database::getSHAid(std::string sha) {
-	int row_id = -1;
-
-	//TODO implement get sha id
-
-	return row_id;
-}
-
-int Database::getpHashId(long pHash) {
-	int row_id = -1;
-
-	//TODO implement get pHashId
-
-	return row_id;
 }
 
 int Database::addHashEntry(std::string sha, u_int64_t pHash) {

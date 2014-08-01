@@ -42,7 +42,6 @@ public:
 	};
 
 	void add(db_data);
-	void updateSHA256(std::string path, std::string sha);
 	unsigned int getRecordsWritten();
 	void shutdown();
 	int flush();
@@ -53,10 +52,7 @@ public:
 	int64_t getPhash(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
-	int getEmptyShaRows();
 	void exec(const char*);
-	int getSHAid(std::string sha);
-	int getpHashId(long pHash);
 
 private:
 	odb::database *orm_db;
