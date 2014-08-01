@@ -22,8 +22,8 @@ build-project commoncpp ;
 
 alias libs : log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 boost-option odb odb-sqlite commoncpp ;
 
-lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
-lib odbtable : [ GLOB src/main/table : *.c* ] libs ihcommon : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
+lib odbtable : [ GLOB src/main/table : *.c* ] libs : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
+lib ihcommon : [ GLOB src/main : *.cpp ] libs odbtable : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
 exe imageHasher : src/ImageHasher.cpp libs ihcommon odbtable : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
 unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon odbtable : <cxxflags>-Wno-unknown-pragmas ;
 exe hashUtil : src/HashUtil.cpp libs ihcommon odbtable : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
