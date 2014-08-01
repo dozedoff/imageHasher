@@ -5,6 +5,7 @@ project imageHasher
 
 import testing ;
 
+
 lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
 lib boost-sys : : <name>boost_system ;
@@ -21,8 +22,8 @@ build-project commoncpp ;
 
 alias libs : log4cplus boost-fs boost-sys boost-thread boost-chrono sqlite3 boost-option odb odb-sqlite commoncpp ;
 
-lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared ;
-lib odbtable : [ GLOB src/main/table : *.c* ] libs ihcommon : <threading>multi <link>shared ;
-exe imageHasher : src/ImageHasher.cpp libs ihcommon odbtable : <threading>multi <link>shared ;
-unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon odbtable ;
-exe hashUtil : src/HashUtil.cpp libs ihcommon odbtable : <threading>multi <link>shared ;
+lib ihcommon : [ GLOB src/main : *.cpp ] libs : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
+lib odbtable : [ GLOB src/main/table : *.c* ] libs ihcommon : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
+exe imageHasher : src/ImageHasher.cpp libs ihcommon odbtable : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
+unit-test tests : [ GLOB src/test : *.cpp ] libs ihcommon odbtable : <cxxflags>-Wno-unknown-pragmas ;
+exe hashUtil : src/HashUtil.cpp libs ihcommon odbtable : <threading>multi <link>shared <cxxflags>-Wno-unknown-pragmas ;
