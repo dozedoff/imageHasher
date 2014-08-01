@@ -161,16 +161,6 @@ bool Database::entryExists(db_data data) {
 	return entryExists(data.filePath);
 }
 
-bool Database::hasSHA(fs::path filepath) {
-	boost::mutex::scoped_lock lock(dbMutex);
-
-	LOG4CPLUS_DEBUG(logger, "Looking if " << filepath << " has SHA");
-
-	//TODO implement has sha
-
-	return false;
-}
-
 std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::list<fs::path> filePaths;
 	std::string query(directoryPath.string());

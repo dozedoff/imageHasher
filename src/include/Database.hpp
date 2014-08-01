@@ -52,7 +52,6 @@ public:
 	int flush();
 	bool entryExists(db_data);
 	bool entryExists(fs::path);
-	bool hasSHA(fs::path);
 	std::string getSHA(fs::path filepath);
 	int64_t getPhash(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);

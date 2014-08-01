@@ -41,7 +41,6 @@ private:
 	bool isValidPath(string);
 	void filter(path, string);
 	void prune(fs::path);
-	void updateSha(fs::path);
 };
 
 int main(int argc, char* argv[]) {
@@ -101,7 +100,7 @@ int HashUtil::run(int argc, char* argv[]) {
 	}else if(vm.count("path") == 0){
 		cout << "No paths given, aborting.\n";
 		exit(1);
-	}else if((vm.count("filter") == 0) && (vm.count("prune") == 0) && (vm.count("sha") == 0)){
+	}else if((vm.count("filter") == 0) && (vm.count("prune") == 0)){
 		cout << "No operation selected, aborting.\n";
 		exit(2);
 	}
@@ -112,10 +111,6 @@ int HashUtil::run(int argc, char* argv[]) {
 
 	if(vm.count("prune")) {
 		cout << "Pruning database.\n";
-	}
-
-	if(vm.count("sha")){
-		cout << "Updating SHA\n";
 	}
 
 	cout << "Folders to process:\n";
@@ -142,10 +137,6 @@ int HashUtil::run(int argc, char* argv[]) {
 
 		if(vm.count("filter") > 0) {
 			filter(path, vm["filter"].as<string>());
-		}
-
-		if(vm.count("sha") > 0) {
-			updateSha(path);
 		}
 	}
 
@@ -192,31 +183,4 @@ void HashUtil::prune(fs::path directory) {
 	LOG4CPLUS_INFO(logger, "Found " << pruneCount << " files that no longe exist");
 	db->prunePath(files);
 	LOG4CPLUS_INFO(logger, "Pruned " << pruneCount << " of " << files.size() << " entries");
-}
-
-void HashUtil::updateSha(fs::path directory) {
-	list<fs::path> images = imageFinder->getImages(directory);
-	LOG4CPLUS_INFO(logger, "Updating SHA for " << images.size() << " image(s) for " << directory);
-
-	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
-		if(!db->entryExists(*ite)) {
-			LOG4CPLUS_DEBUG(logger, *ite << " not in database, skipping...");
-			continue;
-		}
-
-		if (db->hasSHA(*ite)) {
-			LOG4CPLUS_DEBUG(logger, *ite << " already has a SHA, skipping...");
-			continue;
-		}
-
-		std::string sha256 = sha->sha256(*ite);
-
-		Database::db_data data;
-		data.status = Database::SHA;
-		data.filePath = *ite;
-		data.sha256 = sha256;
-
-		db->add(data);
-		LOG4CPLUS_DEBUG(logger, "Updating SHA for image " << *ite << " with " << sha256);
-	}
 }
