@@ -24,6 +24,7 @@
 #include "../main/table/ImageRecord.hpp"
 #include "../main/table/ImageRecord-odb.hxx"
 
+#include <string>
 
 namespace fs = boost::filesystem;
 
@@ -58,6 +59,7 @@ public:
 	void prunePath(std::list<fs::path>);
 	void exec(const char*);
 	bool sha_exists(std::string sha);
+	int add_path_placeholder(std::string path);
 	imageHasher::db::table::Hash get_hash(std::string sha);
 	imageHasher::db::table::Hash get_hash(u_int64_t phash);
 	imageHasher::db::table::ImageRecord get_imagerecord(fs::path filepath);

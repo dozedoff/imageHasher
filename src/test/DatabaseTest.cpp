@@ -112,3 +112,10 @@ TEST_F(DatabaseTest, getSHANotExisting) {
 	ASSERT_TRUE(shaHash.empty());
 	db->shutdown();
 }
+
+TEST_F(DatabaseTest, add_path_placeholder) {
+	int id = db->add_path_placeholder("placeholder");
+	db->shutdown();
+
+	ASSERT_EQ(1, id);
+}

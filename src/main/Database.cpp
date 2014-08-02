@@ -259,6 +259,18 @@ void Database::add_record(db_data data) {
 	t.commit();
 }
 
+int Database::add_path_placeholder(std::string path) {
+
+	transaction t (orm_db->begin());
+
+	ImageRecord ir (path,NULL);
+	int id = orm_db->persist(ir);
+
+	t.commit();
+
+	return id;
+}
+
 void Database::add_invalid(db_data data) {
 	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
 	recordsWritten--;
