@@ -117,15 +117,17 @@ void Database::setupDatabase() {
 		addHashEntry("",0);
 	}
 
-/*
- 	 // TODO get this to work with odb
-	exec(const_cast<char *>("PRAGMA page_size = 4096;"));
-	exec(const_cast<char *>("PRAGMA cache_size=10000;"));
-	exec(const_cast<char *>("PRAGMA locking_mode=EXCLUSIVE;"));
-	exec(const_cast<char *>("PRAGMA synchronous=NORMAL;"));
-	exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
-	exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
-	*/
+	transaction t_pragma (orm_db->begin());
+		orm_db->execute("PRAGMA page_size = 4096;");
+		orm_db->execute("PRAGMA cache_size=10000;");
+		orm_db->execute("PRAGMA locking_mode=EXCLUSIVE;");
+		orm_db->execute("PRAGMA temp_store = MEMORY;");
+		orm_db->execute("PRAGMA journal_mode=MEMORY;");
+	t_pragma.commit();
+
+	// perform out of transaction execution
+	connection_ptr c (orm_db->connection());
+	c->execute("PRAGMA synchronous=NORMAL;");
 }
 
 void Database::add(db_data data) {
