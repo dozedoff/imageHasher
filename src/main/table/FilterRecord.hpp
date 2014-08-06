@@ -38,13 +38,17 @@ namespace table {
 #pragma db object table("filterrecord")
 class FilterRecord {
 public:
-	FilterRecord();
+	FilterRecord(uint64_t pHash, std::string reason);
+
+	bool is_valid();
 
 	#pragma db id auto
 	uint64_t pHash;
 
 	std::string reason;
 
+private:
+	FilterRecord();
 	friend class odb::access;
 };
 

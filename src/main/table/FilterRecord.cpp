@@ -29,9 +29,18 @@ namespace imageHasher {
 namespace db {
 namespace table {
 
-FilterRecord::FilterRecord() {
-	// TODO Auto-generated constructor stub
+bool FilterRecord::is_valid() {
+	return !this->reason.empty();
+}
 
+FilterRecord::FilterRecord() {
+	this->pHash = 0;
+	this->reason = "";
+}
+
+FilterRecord::FilterRecord(uint64_t pHash, std::string reason) {
+	this->pHash = pHash;
+	this->reason = reason;
 }
 
 } /* namespace table */
