@@ -342,12 +342,15 @@ bool Database::sha_exists(std::string sha) {
 }
 
 int64_t Database::getPhash(fs::path filepath) {
-	int pHash = -1;
 	LOG4CPLUS_DEBUG(logger, "Getting pHash for path " << filepath);
 
-	//TODO implement get phash
+	ImageRecord ir = get_imagerecord(filepath);
 
-	return pHash;
+	if(ir.is_valid()) {
+		return ir.get_hash().get_pHash();
+	}
+
+	return -1;
 }
 
 imageHasher::db::table::Hash Database::get_hash(std::string sha) {

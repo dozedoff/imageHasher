@@ -175,3 +175,23 @@ TEST_F(DatabaseTest, prunePath) {
 	ASSERT_FALSE(db->entryExists(to_delete.front()));
 	ASSERT_FALSE(db->entryExists(to_delete.back()));
 }
+
+TEST_F(DatabaseTest, getPhash) {
+	Database::db_data data("/foo/bar", "ABCD", 42);
+	db->add(data);
+	db->flush();
+
+	int64_t pHash = db->getPhash("/foo/bar");
+
+	ASSERT_EQ(42, pHash);
+}
+
+TEST_F(DatabaseTest, getPhash_invalid_entry) {
+	Database::db_data data("/foo/bar", "ABCD", 42);
+	db->add(data);
+	db->flush();
+
+	int64_t pHash = db->getPhash("/foo/baz");
+
+	ASSERT_EQ(-1, pHash);
+}
