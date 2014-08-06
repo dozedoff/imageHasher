@@ -90,6 +90,8 @@ private:
 	imageHasher::db::table::Hash addHashEntry(std::string sha, u_int64_t pHash);
 	void add_record(db_data data);
 	void add_invalid(db_data data);
+	bool is_db_initialised();
+	void initialise_db();
 };
 
 #endif /* DATABASE_HPP_ */

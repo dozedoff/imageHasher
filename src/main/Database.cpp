@@ -92,29 +92,35 @@ void Database::init() {
 	workerThread = new boost::thread(&Database::doWork, this);
 }
 
+bool Database::is_db_initialised() {
+	Hash hash;
+	bool exists = true;
+	transaction t(orm_db->begin());
+	try {
+		exists = orm_db->find(1, hash);
+	} catch (odb::sqlite::database_exception& e) {
+		exists = false;
+	}
+	t.commit();
+	return exists;
+}
+
+void Database::initialise_db() {
+	transaction t(orm_db->begin());
+	odb: schema_catalog::create_schema(*orm_db, "", false);
+	t.commit();
+	addHashEntry("", 0);
+}
+
 void Database::setupDatabase() {
 	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
 
-	Hash hash;
-	bool exists = true;
+	bool init_done = is_db_initialised();
 
-	transaction t(orm_db->begin());
-	try{
-		exists = orm_db->find(1, hash);
-	}catch(odb::sqlite::database_exception &e){
-		exists = false;
-	}
-	t.commit();
-
-
-
-	if(! exists) {
-		transaction t(orm_db->begin());
-			odb:schema_catalog::create_schema(*orm_db, "", false);
-		t.commit();
-		addHashEntry("",0);
+	if(! init_done) {
+		initialise_db();
 	}
 
 	transaction t_pragma (orm_db->begin());
