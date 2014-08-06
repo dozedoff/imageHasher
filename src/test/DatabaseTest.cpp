@@ -145,3 +145,33 @@ TEST_F(DatabaseTest, get_files_with_path) {
 	ASSERT_STREQ("/foo/bar", paths.front().string().c_str());
 	ASSERT_STREQ("/foo/baz", paths.back().string().c_str());
 }
+
+TEST_F(DatabaseTest, prunePath) {
+	Database::db_data data0("/foo/bar", "ABCD", 1);
+	Database::db_data data1("/foo/bar/bar", "ABCD", 1);
+	Database::db_data data2("/foo/baz", "ABCD", 1);
+	Database::db_data data3("/bar/foo", "ABCD", 1);
+	Database::db_data data4("/red/fox", "ABCD", 1);
+
+	db->add(data0);
+	db->add(data1);
+	db->add(data2);
+	db->add(data3);
+	db->add(data4);
+
+	db->flush();
+
+	std::list<fs::path> to_delete;
+
+	to_delete.push_back(fs::path("/foo/bar"));
+	to_delete.push_back(fs::path("/foo/baz"));
+
+	// guard
+	ASSERT_TRUE(db->entryExists(to_delete.front()));
+	ASSERT_TRUE(db->entryExists(to_delete.back()));
+
+	db->prunePath(to_delete);
+
+	ASSERT_FALSE(db->entryExists(to_delete.front()));
+	ASSERT_FALSE(db->entryExists(to_delete.back()));
+}

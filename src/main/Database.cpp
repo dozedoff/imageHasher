@@ -202,20 +202,16 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 }
 
 void Database::prunePath(std::list<fs::path> filePaths) {
-	boost::mutex::scoped_lock lock(dbMutex);
-
-	bool allOk = true;
-
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
-		const char* path = ite->c_str();
-		int pathSize = ite->string().size();
-		int response = 0;
+		ImageRecord ir = get_imagerecord(*ite);
 
-		//TODO implement prunePath
-	}
+		transaction t (orm_db->begin());
 
-	if (!allOk) {
-		LOG4CPLUS_WARN(logger, "Failed to delete some file paths");
+		if(ir.is_valid()) {
+			orm_db->erase(ir);
+		}
+
+		t.commit();
 	}
 }
 
