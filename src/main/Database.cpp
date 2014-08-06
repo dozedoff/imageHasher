@@ -16,6 +16,9 @@
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
 
+#include "table/FilterRecord.hpp"
+#include "table/FilterRecord-odb.hxx"
+
 const char *dbName = "imageHasher.db";
 
 const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`sha_id`,`phash_id`) VALUES (?,?,?);";
@@ -284,6 +287,18 @@ void Database::add_invalid(db_data data) {
 	transaction t(orm_db->begin());
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
+
+	t.commit();
+}
+
+void Database::add_filter(db_data data) {
+	LOG4CPLUS_DEBUG(logger, "Adding filter record for pHash" << data.pHash << " with reason " << data.reason);
+
+	imageHasher::db::table::FilterRecord fr(data.pHash, data.reason);
+
+	transaction t (orm_db->begin());
+
+	orm_db->persist(fr);
 
 	t.commit();
 }
