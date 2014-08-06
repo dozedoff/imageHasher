@@ -119,3 +119,29 @@ TEST_F(DatabaseTest, add_path_placeholder) {
 
 	ASSERT_EQ(1, id);
 }
+
+TEST_F(DatabaseTest, get_files_with_path) {
+	Database::db_data data0("/foo/bar", "ABCD", 1);
+	Database::db_data data1("/foo/bar/bar", "ABCD", 1);
+	Database::db_data data2("/foo/baz", "ABCD", 1);
+	Database::db_data data3("/bar/foo", "ABCD", 1);
+	Database::db_data data4("/red/fox", "ABCD", 1);
+
+	db->add(data0);
+	db->add(data1);
+	db->add(data2);
+	db->add(data3);
+	db->add(data4);
+
+	db->flush();
+
+	fs::path search_path("/foo/");
+
+	std::list<fs::path> paths = db->getFilesWithPath(search_path);
+	ASSERT_EQ(3,paths.size());
+
+	paths.sort();
+
+	ASSERT_STREQ("/foo/bar", paths.front().string().c_str());
+	ASSERT_STREQ("/foo/baz", paths.back().string().c_str());
+}

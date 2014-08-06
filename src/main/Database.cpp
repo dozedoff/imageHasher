@@ -183,17 +183,19 @@ bool Database::entryExists(db_data data) {
 
 std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::list<fs::path> filePaths;
-	std::string query(directoryPath.string());
-	query += "%";
-	const char* path = query.c_str();
-	int pathSize = query.size();
-	int response = -1;
+	std::string path_query(directoryPath.string());
+	path_query += "%";
 
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
-	boost::mutex::scoped_lock lock(dbMutex);
+	transaction t (orm_db->begin());
+	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path.like(path_query)));
 
-	//TODO implement get file with path
+	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		filePaths.push_back(fs::path(itr->getPath()));
+	}
+
+	t.commit();
 
 	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
 	return filePaths;

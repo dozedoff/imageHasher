@@ -44,6 +44,10 @@ public:
 	Hash get_hash();
 	bool is_valid();
 
+	const std::string& getPath() const {
+		return path;
+	}
+
 private:
 	#pragma db id auto
 	int image_id;
