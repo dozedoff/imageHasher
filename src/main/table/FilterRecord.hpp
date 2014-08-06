@@ -43,8 +43,12 @@ public:
 	bool is_valid();
 
 	#pragma db id auto
+	int filter_id;
+
+#pragma db index member(pHash) unique
 	uint64_t pHash;
 
+#pragma db value_not_null
 	std::string reason;
 
 private:

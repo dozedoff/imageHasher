@@ -52,7 +52,7 @@ namespace odb
 
     static const bool polymorphic = false;
 
-    typedef ::uint64_t id_type;
+    typedef int id_type;
 
     static const bool auto_id = true;
 
@@ -92,6 +92,18 @@ namespace odb
   template <typename A>
   struct query_columns< ::imageHasher::db::table::FilterRecord, id_sqlite, A >
   {
+    // filter_id
+    //
+    typedef
+    sqlite::query_column<
+      sqlite::value_traits<
+        int,
+        sqlite::id_integer >::query_type,
+      sqlite::id_integer >
+    filter_id_type_;
+
+    static const filter_id_type_ filter_id;
+
     // pHash
     //
     typedef
@@ -116,6 +128,11 @@ namespace odb
 
     static const reason_type_ reason;
   };
+
+  template <typename A>
+  const typename query_columns< ::imageHasher::db::table::FilterRecord, id_sqlite, A >::filter_id_type_
+  query_columns< ::imageHasher::db::table::FilterRecord, id_sqlite, A >::
+  filter_id (A::table_name, "\"filter_id\"", 0);
 
   template <typename A>
   const typename query_columns< ::imageHasher::db::table::FilterRecord, id_sqlite, A >::pHash_type_
@@ -148,6 +165,11 @@ namespace odb
 
     struct image_type
     {
+      // filter_id
+      //
+      long long filter_id_value;
+      bool filter_id_null;
+
       // pHash
       //
       long long pHash_value;
@@ -198,7 +220,7 @@ namespace odb
 
     typedef sqlite::query_base query_base_type;
 
-    static const std::size_t column_count = 2UL;
+    static const std::size_t column_count = 3UL;
     static const std::size_t id_column_count = 1UL;
     static const std::size_t inverse_column_count = 0UL;
     static const std::size_t readonly_column_count = 0UL;

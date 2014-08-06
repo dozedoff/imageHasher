@@ -49,11 +49,11 @@ namespace odb
     id_type id;
     {
       sqlite::value_traits<
-          ::uint64_t,
+          int,
           sqlite::id_integer >::set_value (
         id,
-        i.pHash_value,
-        i.pHash_null);
+        i.filter_id_value,
+        i.filter_id_null);
     }
 
     return id;
@@ -68,13 +68,17 @@ namespace odb
 
     bool grew (false);
 
-    // pHash
+    // filter_id
     //
     t[0UL] = false;
 
+    // pHash
+    //
+    t[1UL] = false;
+
     // reason
     //
-    if (t[1UL])
+    if (t[2UL])
     {
       i.reason_value.capacity (i.reason_size);
       grew = true;
@@ -94,15 +98,22 @@ namespace odb
 
     std::size_t n (0);
 
-    // pHash
+    // filter_id
     //
     if (sk != statement_update)
     {
       b[n].type = sqlite::bind::integer;
-      b[n].buffer = &i.pHash_value;
-      b[n].is_null = &i.pHash_null;
+      b[n].buffer = &i.filter_id_value;
+      b[n].is_null = &i.filter_id_null;
       n++;
     }
+
+    // pHash
+    //
+    b[n].type = sqlite::bind::integer;
+    b[n].buffer = &i.pHash_value;
+    b[n].is_null = &i.pHash_null;
+    n++;
 
     // reason
     //
@@ -138,9 +149,25 @@ namespace odb
 
     bool grew (false);
 
-    // pHash
+    // filter_id
     //
     if (sk == statement_insert)
+    {
+      int const& v =
+        o.filter_id;
+
+      bool is_null (false);
+      sqlite::value_traits<
+          int,
+          sqlite::id_integer >::set_image (
+        i.filter_id_value,
+        is_null,
+        v);
+      i.filter_id_null = is_null;
+    }
+
+    // pHash
+    //
     {
       ::uint64_t const& v =
         o.pHash;
@@ -186,6 +213,20 @@ namespace odb
     ODB_POTENTIALLY_UNUSED (i);
     ODB_POTENTIALLY_UNUSED (db);
 
+    // filter_id
+    //
+    {
+      int& v =
+        o.filter_id;
+
+      sqlite::value_traits<
+          int,
+          sqlite::id_integer >::set_value (
+        v,
+        i.filter_id_value,
+        i.filter_id_null);
+    }
+
     // pHash
     //
     {
@@ -222,7 +263,7 @@ namespace odb
     {
       bool is_null (false);
       sqlite::value_traits<
-          ::uint64_t,
+          int,
           sqlite::id_integer >::set_image (
         i.id_value,
         is_null,
@@ -233,30 +274,34 @@ namespace odb
 
   const char access::object_traits_impl< ::imageHasher::db::table::FilterRecord, id_sqlite >::persist_statement[] =
   "INSERT INTO \"filterrecord\" "
-  "(\"pHash\", "
+  "(\"filter_id\", "
+  "\"pHash\", "
   "\"reason\") "
   "VALUES "
-  "(?, ?)";
+  "(?, ?, ?)";
 
   const char access::object_traits_impl< ::imageHasher::db::table::FilterRecord, id_sqlite >::find_statement[] =
   "SELECT "
+  "\"filterrecord\".\"filter_id\", "
   "\"filterrecord\".\"pHash\", "
   "\"filterrecord\".\"reason\" "
   "FROM \"filterrecord\" "
-  "WHERE \"filterrecord\".\"pHash\"=?";
+  "WHERE \"filterrecord\".\"filter_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::FilterRecord, id_sqlite >::update_statement[] =
   "UPDATE \"filterrecord\" "
   "SET "
+  "\"pHash\"=?, "
   "\"reason\"=? "
-  "WHERE \"pHash\"=?";
+  "WHERE \"filter_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::FilterRecord, id_sqlite >::erase_statement[] =
   "DELETE FROM \"filterrecord\" "
-  "WHERE \"pHash\"=?";
+  "WHERE \"filter_id\"=?";
 
   const char access::object_traits_impl< ::imageHasher::db::table::FilterRecord, id_sqlite >::query_statement[] =
   "SELECT "
+  "\"filterrecord\".\"filter_id\", "
   "\"filterrecord\".\"pHash\", "
   "\"filterrecord\".\"reason\" "
   "FROM \"filterrecord\"";
@@ -289,7 +334,7 @@ namespace odb
     if (init (im, obj, statement_insert))
       im.version++;
 
-    im.pHash_null = true;
+    im.filter_id_null = true;
 
     if (im.version != sts.insert_image_version () ||
         imb.version == 0)
@@ -303,7 +348,7 @@ namespace odb
     if (!st.execute ())
       throw object_already_persistent ();
 
-    obj.pHash = static_cast< id_type > (st.id ());
+    obj.filter_id = static_cast< id_type > (st.id ());
 
     callback (db,
               static_cast<const object_type&> (obj),
@@ -326,7 +371,7 @@ namespace odb
       conn.statement_cache ().find_object<object_type> ());
 
     const id_type& id (
-      obj.pHash);
+      obj.filter_id);
     id_image_type& idi (sts.id_image ());
     init (idi, id);
 
@@ -502,7 +547,7 @@ namespace odb
     statements_type::auto_lock l (sts);
 
     const id_type& id  (
-      obj.pHash);
+      obj.filter_id);
 
     if (!find_ (sts, &id))
       return false;
@@ -770,8 +815,11 @@ namespace odb
         case 1:
         {
           db.execute ("CREATE TABLE \"filterrecord\" (\n"
-                      "  \"pHash\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
+                      "  \"filter_id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n"
+                      "  \"pHash\" INTEGER NOT NULL,\n"
                       "  \"reason\" TEXT NOT NULL)");
+          db.execute ("CREATE UNIQUE INDEX \"filterrecord_pHash_i\"\n"
+                      "  ON \"filterrecord\" (\"pHash\")");
           return false;
         }
       }

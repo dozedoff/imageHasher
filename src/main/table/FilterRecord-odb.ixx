@@ -12,7 +12,7 @@ namespace odb
   access::object_traits< ::imageHasher::db::table::FilterRecord >::
   id (const object_type& o)
   {
-    return o.pHash;
+    return o.filter_id;
   }
 
   inline

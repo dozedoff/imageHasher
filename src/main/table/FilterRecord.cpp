@@ -34,11 +34,13 @@ bool FilterRecord::is_valid() {
 }
 
 FilterRecord::FilterRecord() {
+	this->filter_id = 0;
 	this->pHash = 0;
 	this->reason = "";
 }
 
 FilterRecord::FilterRecord(uint64_t pHash, std::string reason) {
+	this->filter_id = 0;
 	this->pHash = pHash;
 	this->reason = reason;
 }
