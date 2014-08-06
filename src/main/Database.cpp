@@ -232,12 +232,7 @@ void Database::addToBatch(db_data data) {
 		break;
 
 	case FILTER:
-		//TODO add filter record
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason);
-		}
-
+		add_filter(data);
 		break;
 
 	default:
