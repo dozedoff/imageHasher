@@ -373,7 +373,19 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 
 imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	Hash hash;
-	//TODO implement me
+	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
+
+	transaction t (orm_db->begin());
+
+	result<Hash> r (orm_db->query<Hash>(query<Hash>::pHash == phash));
+
+	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		hash = *itr;
+		break;
+	}
+
+	t.commit();
+
 	return hash;
 }
 

@@ -195,3 +195,23 @@ TEST_F(DatabaseTest, getPhash_invalid_entry) {
 
 	ASSERT_EQ(-1, pHash);
 }
+
+TEST_F(DatabaseTest, get_hash_phash) {
+	Database::db_data data("/foo/bar", "ABCD", 42);
+	db->add(data);
+	db->flush();
+
+	imageHasher::db::table::Hash hash = db->get_hash(42);
+
+	ASSERT_STREQ("ABCD", hash.get_sha256().c_str());
+}
+
+TEST_F(DatabaseTest, get_hash_phash_not_valid) {
+	Database::db_data data("/foo/bar", "ABCD", 42);
+	db->add(data);
+	db->flush();
+
+	imageHasher::db::table::Hash hash = db->get_hash(12);
+
+	ASSERT_FALSE(hash.is_valid());
+}
