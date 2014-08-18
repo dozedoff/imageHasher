@@ -137,6 +137,8 @@ void Database::setupDatabase() {
 	// perform out of transaction execution
 	connection_ptr c (orm_db->connection());
 	c->execute("PRAGMA synchronous=NORMAL;");
+
+	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
 }
 
 void Database::add(db_data data) {

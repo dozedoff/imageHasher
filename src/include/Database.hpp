@@ -24,6 +24,8 @@
 #include "../main/table/ImageRecord.hpp"
 #include "../main/table/ImageRecord-odb.hxx"
 
+#include "../main/PreparedQuery.hpp"
+
 #include <string>
 
 namespace fs = boost::filesystem;
@@ -76,6 +78,7 @@ private:
 	unsigned int recordsWritten;
 	bool running;
 	boost::thread *workerThread;
+	imageHasher::db::PreparedQuery *prep_query;
 
 	void init();
 	void setupDatabase();
