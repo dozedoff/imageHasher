@@ -110,7 +110,7 @@ bool Database::is_db_initialised() {
 
 void Database::initialise_db() {
 	transaction t(orm_db->begin());
-	odb: schema_catalog::create_schema(*orm_db, "", false);
+	odb::schema_catalog::create_schema(*orm_db, "", false);
 	t.commit();
 	addHashEntry("", 0);
 }
