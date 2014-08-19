@@ -407,7 +407,12 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 
 	transaction t (orm_db->begin());
 
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
+	std::string *p = new std::string(filepath.string());
+
+	LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << *p);
+	odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
+
+	result<ImageRecord> r (pq.execute());
 
 	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
 		ir = *itr;
