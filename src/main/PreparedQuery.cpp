@@ -66,7 +66,7 @@ void PreparedQuery::imageRecord_query_factory(const char* query_name, odb::conne
 	typedef odb::query<ImageRecord> query;
 
 	std::auto_ptr<std::string> p (new std::string);
-	query q (query::path > query::_ref (*p));
+	query q (query::path == query::_ref (*p));
 	odb::prepared_query<ImageRecord> pq (connection.prepare_query<ImageRecord> (query_name, q));
 	connection.cache_query (pq, p);
 }
