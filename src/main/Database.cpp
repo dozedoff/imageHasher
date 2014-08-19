@@ -54,6 +54,7 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
+	delete this->prep_query;
 }
 
 int Database::flush() {
