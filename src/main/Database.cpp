@@ -54,6 +54,7 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
+	delete orm_db;
 }
 
 int Database::flush() {
