@@ -404,21 +404,27 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath) {
 	ImageRecord ir;
 
-	transaction t (orm_db->begin());
+	try {
+		transaction t(orm_db->begin());
 
-	std::string *p = new std::string(filepath.string());
+		std::string *p;
 
-	LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << *p);
-	odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
+		LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << filepath);
+		odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
 
-	result<ImageRecord> r (pq.execute());
+		p->append(filepath.string());
 
-	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		ir = *itr;
-		break;
+		result<ImageRecord> r(pq.execute());
+
+		for (result<ImageRecord>::iterator itr(r.begin()); itr != r.end(); ++itr) {
+			ir = *itr;
+			break;
+		}
+
+		t.commit();
+	} catch (odb::exception *e) {
+		LOG4CPLUS_ERROR(logger, "Failed to get ImageRecord for path " << filepath << " : " << e);
 	}
-
-	t.commit();
 
 	return ir;
 }
