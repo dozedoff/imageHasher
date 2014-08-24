@@ -12,6 +12,7 @@
 #include <odb/result.hxx>
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/exceptions.hxx>
+#include <odb/exceptions.hxx>
 
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
@@ -256,12 +257,16 @@ void Database::add_record(db_data data) {
 		return;
 	}
 
+	try{
 	transaction t(orm_db->begin());
 
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
 
 	t.commit();
+	} catch (const odb::exception &e) {
+		LOG4CPLUS_ERROR(logger, "Failed to add ImageRecord for path " << data.filePath << " : " << e.what());
+	}
 }
 
 int Database::add_path_placeholder(std::string path) {
