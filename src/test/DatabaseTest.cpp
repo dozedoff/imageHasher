@@ -21,6 +21,7 @@ protected:
 	~DatabaseTest() {
 		db->shutdown();
 		delete(db);
+		delete(dbPath);
 	}
 };
 
