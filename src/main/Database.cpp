@@ -75,6 +75,7 @@ void Database::shutdown() {
 		LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
 		workerThread->interrupt();
 		workerThread->join();
+		delete(workerThread);
 		LOG4CPLUS_INFO(logger, "Closing database...");
 	}
 }
