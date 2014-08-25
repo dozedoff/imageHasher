@@ -57,7 +57,7 @@ PreparedQuery::~PreparedQuery() {
 	// TODO Auto-generated destructor stub
 }
 
-odb::prepared_query<ImageRecord> PreparedQuery::get_imagerecord_path_query(std::string* path) {
+odb::prepared_query<ImageRecord> PreparedQuery::get_imagerecord_path_query(std::string*& path) {
 	odb::prepared_query<ImageRecord> pq (db->lookup_query<ImageRecord>(ih_query,path));
 	return pq;
 }

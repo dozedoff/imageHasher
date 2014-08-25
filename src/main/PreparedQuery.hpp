@@ -42,7 +42,7 @@ public:
 	PreparedQuery(odb::database *db);
 	virtual ~PreparedQuery();
 
-	odb::prepared_query<imageHasher::db::table::ImageRecord> get_imagerecord_path_query(std::string *path);
+	odb::prepared_query<imageHasher::db::table::ImageRecord> get_imagerecord_path_query(std::string *& path);
 
 private:
 	odb::database *db;
