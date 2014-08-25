@@ -417,7 +417,7 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 		LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << filepath);
 		odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
 
-		p->append(filepath.string());
+		*p = filepath.string();
 
 		result<ImageRecord> r(pq.execute());
 
