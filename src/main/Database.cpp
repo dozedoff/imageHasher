@@ -399,11 +399,15 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	Hash hash;
 	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
 
-	transaction t (orm_db->begin());
+	transaction t(orm_db->begin());
 
-	result<Hash> r (orm_db->query<Hash>(query<Hash>::pHash == phash));
+	uint64_t *param;
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
+	*param = phash;
 
-	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+	result<Hash> r(pq.execute());
+
+	for (result<Hash>::iterator itr(r.begin()); itr != r.end(); ++itr) {
 		hash = *itr;
 		break;
 	}
