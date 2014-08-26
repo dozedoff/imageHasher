@@ -344,17 +344,12 @@ std::string Database::getSHA(fs::path filepath) {
 	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
 
-	transaction t (orm_db->begin());
+	ImageRecord ir = get_imagerecord(filepath);
 
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
-
-	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		Hash hash = itr->get_hash();
+	if(ir.is_valid()) {
+		Hash hash = ir.get_hash();
 		sha = hash.get_sha256();
-		break;
 	}
-
-	t.commit();
 
 	return sha;
 }
