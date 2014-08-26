@@ -194,7 +194,13 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
 	transaction t (orm_db->begin());
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path.like(path_query)));
+	std::string *param;
+
+	odb::prepared_query<ImageRecord> pq = prep_query->get_files_with_path_query(param);
+
+	*param = path_query;
+
+	odb::result<ImageRecord> r(pq.execute());
 
 	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
 		filePaths.push_back(fs::path(itr->getPath()));
