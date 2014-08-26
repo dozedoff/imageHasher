@@ -46,6 +46,7 @@
 #define ih_query "image-hash-path-query"
 #define path_query "get-files-with-path-query"
 #define hash_sha_query "hash-sha-query"
+#define hash_phash_query "hash-phash-query"
 
 using namespace imageHasher::db::table;
 
@@ -58,6 +59,7 @@ PreparedQuery::PreparedQuery(odb::database *db) {
 	db->query_factory(ih_query, &imageRecord_query_factory);
 	db->query_factory(path_query, &path_query_factory);
 	db->query_factory(hash_sha_query, &hash_sha_query_factory);
+	db->query_factory(hash_phash_query, &hash_phash_query_factory);
 }
 
 PreparedQuery::~PreparedQuery() {
@@ -76,6 +78,11 @@ odb::prepared_query<imageHasher::db::table::ImageRecord> PreparedQuery::get_file
 
 odb::prepared_query<imageHasher::db::table::Hash> PreparedQuery::get_hash_query(std::string*& sha) {
 	odb::prepared_query<Hash> pq(db->lookup_query<Hash>(hash_sha_query, sha));
+	return pq;
+}
+
+odb::prepared_query<imageHasher::db::table::Hash> PreparedQuery::get_hash_query(uint64_t*& phash) {
+	odb::prepared_query<Hash> pq(db->lookup_query<Hash>(hash_phash_query, phash));
 	return pq;
 }
 
@@ -102,6 +109,15 @@ void PreparedQuery::hash_sha_query_factory(const char* query_name, odb::connecti
 
 	std::auto_ptr<std::string> p(new std::string);
 	query q(query::sha256 == query::_ref(*p));
+	odb::prepared_query<Hash> pq(connection.prepare_query<Hash>(query_name, q));
+	connection.cache_query(pq, p);
+}
+
+void PreparedQuery::hash_phash_query_factory(const char* query_name, odb::connection& connection) {
+	typedef odb::query<Hash> query;
+
+	std::auto_ptr<uint64_t> p(new uint64_t);
+	query q(query::pHash == query::_ref(*p));
 	odb::prepared_query<Hash> pq(connection.prepare_query<Hash>(query_name, q));
 	connection.cache_query(pq, p);
 }
