@@ -12,6 +12,7 @@
 #include <odb/result.hxx>
 #include <odb/schema-catalog.hxx>
 #include <odb/sqlite/exceptions.hxx>
+#include <odb/exceptions.hxx>
 
 #include "table/ImageRecord.hpp"
 #include "table/ImageRecord-odb.hxx"
@@ -54,6 +55,7 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
+	delete this->prep_query;
 	delete orm_db;
 }
 
@@ -112,7 +114,7 @@ bool Database::is_db_initialised() {
 
 void Database::initialise_db() {
 	transaction t(orm_db->begin());
-	odb: schema_catalog::create_schema(*orm_db, "", false);
+	odb::schema_catalog::create_schema(*orm_db, "", false);
 	t.commit();
 	addHashEntry("", 0);
 }
@@ -194,7 +196,13 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
 	transaction t (orm_db->begin());
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path.like(path_query)));
+	std::string *param;
+
+	odb::prepared_query<ImageRecord> pq = prep_query->get_files_with_path_query(param);
+
+	*param = path_query;
+
+	odb::result<ImageRecord> r(pq.execute());
 
 	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
 		filePaths.push_back(fs::path(itr->getPath()));
@@ -221,9 +229,6 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 }
 
 void Database::addToBatch(db_data data) {
-	int response = 0;
-	int hashId = -1;
-
 	switch (data.status) {
 	case OK:
 		add_record(data);
@@ -257,12 +262,16 @@ void Database::add_record(db_data data) {
 		return;
 	}
 
+	try{
 	transaction t(orm_db->begin());
 
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
 
 	t.commit();
+	} catch (const odb::exception &e) {
+		LOG4CPLUS_ERROR(logger, "Failed to add ImageRecord for path " << data.filePath << " : " << e.what());
+	}
 }
 
 int Database::add_path_placeholder(std::string path) {
@@ -302,6 +311,7 @@ void Database::add_filter(db_data data) {
 
 void Database::prepareStatements() {
 	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
+	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
 }
 
 void Database::doWork() {
@@ -333,17 +343,12 @@ std::string Database::getSHA(fs::path filepath) {
 	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
 
-	transaction t (orm_db->begin());
+	ImageRecord ir = get_imagerecord(filepath);
 
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
-
-	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		Hash hash = itr->get_hash();
+	if(ir.is_valid()) {
+		Hash hash = ir.get_hash();
 		sha = hash.get_sha256();
-		break;
 	}
-
-	t.commit();
 
 	return sha;
 }
@@ -371,7 +376,13 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 
 	transaction t (orm_db->begin());
 
-	result<Hash> r (orm_db->query<Hash>(query<Hash>::sha256 == sha));
+	std::string *param;
+
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
+
+	*param = sha;
+
+	result<Hash> r (pq.execute());
 
 	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
 		hash = *itr;
@@ -387,11 +398,15 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	Hash hash;
 	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
 
-	transaction t (orm_db->begin());
+	transaction t(orm_db->begin());
 
-	result<Hash> r (orm_db->query<Hash>(query<Hash>::pHash == phash));
+	uint64_t *param;
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
+	*param = phash;
 
-	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+	result<Hash> r(pq.execute());
+
+	for (result<Hash>::iterator itr(r.begin()); itr != r.end(); ++itr) {
 		hash = *itr;
 		break;
 	}
@@ -404,16 +419,27 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath) {
 	ImageRecord ir;
 
-	transaction t (orm_db->begin());
+	try {
+		transaction t(orm_db->begin());
 
-	result<ImageRecord> r (orm_db->query<ImageRecord>(query<ImageRecord>::path == filepath.string()));
+		std::string *p;
 
-	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
-		ir = *itr;
-		break;
+		LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << filepath);
+		odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
+
+		*p = filepath.string();
+
+		result<ImageRecord> r(pq.execute());
+
+		for (result<ImageRecord>::iterator itr(r.begin()); itr != r.end(); ++itr) {
+			ir = *itr;
+			break;
+		}
+
+		t.commit();
+	} catch (odb::exception *e) {
+		LOG4CPLUS_ERROR(logger, "Failed to get ImageRecord for path " << filepath << " : " << e);
 	}
-
-	t.commit();
 
 	return ir;
 }
