@@ -24,24 +24,24 @@
  */
 
 #include "../include/Database.hpp"
+#include <string>
+
+#include <odb/transaction.hxx>
+#include <odb/result.hxx>
+#include <odb/schema-catalog.hxx>
+#include <odb/sqlite/exceptions.hxx>
+#include <odb/exceptions.hxx>
+
+#include "table/ImageRecord.hpp"
+#include "table/ImageRecord-odb.hxx"
+
+#include "table/FilterRecord.hpp"
+#include "table/FilterRecord-odb.hxx"
 
 const char *dbName = "imageHasher.db";
 
-const char *insertImageQuery = "INSERT INTO `imagerecord` (`path`,`pHash`, `sha256`) VALUES (?,?,?);";
-const char *insertInvalidQuery = "INSERT INTO `badfilerecord` (`path`) VALUES (?);";
-const char *insertFilterQuery = "INSERT OR IGNORE INTO `filterrecord` (`pHash`, `reason`) VALUES (?,?);";
-const char *prunePathQuery = "SELECT `path` FROM `imagerecord` WHERE `path` LIKE ? UNION SELECT `path` FROM `badfilerecord` WHERE `path` LIKE ?;";
-const char *prunePathDeleteImage = "DELETE FROM `imagerecord` WHERE `path` = ?;";
-const char *prunePathDeleteBadFile = "DELETE FROM `badfilerecord` WHERE `path` = ?;";
-const char *checkExistsQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? LIMIT 1) OR EXISTS(SELECT 1 FROM `badfilerecord`  WHERE `path` = ?  LIMIT 1);";
-const char *checkSHAQuery = "SELECT EXISTS(SELECT 1 FROM `imagerecord` WHERE `path` = ? AND `sha256` != '' LIMIT 1);";
-const char *updateSha = "UPDATE `imagerecord` SET sha256=? WHERE `path`=?";
-const char *getSHAQuery = "SELECT `sha256` FROM `imagerecord` WHERE `path` = ?;";
-
-const char *startTransactionQuery = "BEGIN TRANSACTION;";
-const char *commitTransactionQuery = "COMMIT TRANSACTION;";
-
-static const int CURRENT_DB_SCHEMA_VERSION = 1;
+using namespace odb;
+using namespace imageHasher::db::table;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -54,10 +54,8 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
-}
-
-int Database::getCurrentSchemaVersion() {
-	return CURRENT_DB_SCHEMA_VERSION;
+	delete this->prep_query;
+	delete orm_db;
 }
 
 int Database::flush() {
@@ -78,18 +76,13 @@ void Database::shutdown() {
 		LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
 		workerThread->interrupt();
 		workerThread->join();
+		delete(workerThread);
 		LOG4CPLUS_INFO(logger, "Closing database...");
-		sqlite3_close(db);
 	}
 }
 
 void Database::exec(const char* command) {
-	sqlite3_exec(db, command, NULL, NULL, &errMsg);
-
-	if(errMsg != NULL) {
-		LOG4CPLUS_WARN(logger, "Exec failed: " << command << " -> " << errMsg);
-		sqlite3_free(errMsg);
-	}
+	orm_db->execute(command);
 }
 
 void Database::init() {
@@ -105,56 +98,48 @@ void Database::init() {
 	workerThread = new boost::thread(&Database::doWork, this);
 }
 
+bool Database::is_db_initialised() {
+	Hash hash;
+	bool exists = true;
+	transaction t(orm_db->begin());
+	try {
+		exists = orm_db->find(1, hash);
+	} catch (odb::sqlite::database_exception& e) {
+		exists = false;
+	}
+	t.commit();
+	return exists;
+}
+
+void Database::initialise_db() {
+	transaction t(orm_db->begin());
+	odb::schema_catalog::create_schema(*orm_db, "", false);
+	t.commit();
+	addHashEntry("", 0);
+}
+
 void Database::setupDatabase() {
+	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+
 	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
-	int ret = sqlite3_open(dbName, &db);
-                exec(const_cast<char *>("PRAGMA page_size = 4096;"));
-                exec(const_cast<char *>("PRAGMA cache_size=10000;"));
-                exec(const_cast<char *>("PRAGMA locking_mode=EXCLUSIVE;"));
-                exec(const_cast<char *>("PRAGMA synchronous=NORMAL;"));
-                exec(const_cast<char *>("PRAGMA temp_store = MEMORY;"));
-                exec(const_cast<char *>("PRAGMA journal_mode=MEMORY;"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `imagerecord` (`path` VARCHAR NOT NULL , `pHash` BIGINT NOT NULL , PRIMARY KEY (`path`) );"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `filterrecord` (`pHash` BIGINT NOT NULL , `reason` VARCHAR NOT NULL , PRIMARY KEY (`pHash`) );"));
-                exec(const_cast<char *>("CREATE TABLE IF NOT EXISTS `badfilerecord` (`path` VARCHAR NOT NULL , PRIMARY KEY (`path`) );"));
 
-                updateSchema();
-	if(ret) {
-		LOG4CPLUS_ERROR(logger, "Database setup failed");
-		throw "Database setup failed";
-	}
-}
+	bool init_done = is_db_initialised();
 
-void Database::updateSchema() {
-	int dbVersion = getUserSchemaVersion();
-
-	if(dbVersion == CURRENT_DB_SCHEMA_VERSION){
-		LOG4CPLUS_INFO_STR(logger,"DB schema is up to date.");
-	}else if(dbVersion > CURRENT_DB_SCHEMA_VERSION) {
-		LOG4CPLUS_INFO(logger,"DB schema is newer than the current schema, aborting...");
-		throw std::runtime_error("DB schema is newer than the current version");
-	}else{
-		LOG4CPLUS_INFO(logger,"DB schema is out of date, actual: " << dbVersion << " current: " << CURRENT_DB_SCHEMA_VERSION << " updating...");
-	switch (dbVersion) {
-		case 0:
-			exec(const_cast<char *>("ALTER TABLE imagerecord ADD COLUMN `sha256` VARCHAR NOT NULL DEFAULT ''"));
-			break;
-
-		default:
-			break;
+	if(! init_done) {
+		initialise_db();
 	}
 
-	setUserSchemaVersion(CURRENT_DB_SCHEMA_VERSION);
-	}
-}
+	transaction t_pragma (orm_db->begin());
+		orm_db->execute("PRAGMA page_size = 4096;");
+		orm_db->execute("PRAGMA cache_size=10000;");
+		orm_db->execute("PRAGMA locking_mode=EXCLUSIVE;");
+		orm_db->execute("PRAGMA temp_store = MEMORY;");
+		orm_db->execute("PRAGMA journal_mode=MEMORY;");
+	t_pragma.commit();
 
-void Database::updateSHA256(std::string path, std::string sha){
-	sqlite3_bind_text(updateShaStmt, 1, sha.c_str(), sha.size(), SQLITE_STATIC);
-	sqlite3_bind_text(updateShaStmt, 2, path.c_str(), path.size(), SQLITE_STATIC);
-
-	sqlite3_step(updateShaStmt);
-
-	sqlite3_reset(updateShaStmt);
+	// perform out of transaction execution
+	connection_ptr c (orm_db->connection());
+	c->execute("PRAGMA synchronous=NORMAL;");
 }
 
 void Database::add(db_data data) {
@@ -180,190 +165,80 @@ int Database::drain() {
 	workList = currentList;
 	flipLists();
 
-	startTransaction();
-
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
 	}
 
-	commitTransaction();
-
 	workList->clear();
 	return drainCount;
 }
 
 bool Database::entryExists(fs::path filePath) {
-boost::mutex::scoped_lock lock(dbMutex);
-	const char* path = filePath.c_str();
-	int pathSize = filePath.string().size();
+	LOG4CPLUS_DEBUG(logger, "Looking for file " << filePath);
 
-	LOG4CPLUS_DEBUG(logger, "Looking for file " << path);
+	ImageRecord ir = get_imagerecord(filePath);
 
-	sqlite3_bind_text(checkExistsStmt, 1, path, pathSize, SQLITE_STATIC);
-	sqlite3_bind_text(checkExistsStmt, 2, path, pathSize, SQLITE_STATIC);
-
-	sqlite3_step(checkExistsStmt);
-	int response = sqlite3_column_int(checkExistsStmt, 0);
-	sqlite3_reset(checkExistsStmt);
-
-	if (response == 1) {
-		return true;
-	} else {
-		return false;
-	}
+	return ir.is_valid();
 }
 
 bool Database::entryExists(db_data data) {
 	return entryExists(data.filePath);
 }
 
-bool Database::hasSHA(fs::path filepath) {
-	boost::mutex::scoped_lock lock(dbMutex);
-
-	LOG4CPLUS_DEBUG(logger, "Looking if " << filepath << " has SHA");
-
-	sqlite3_bind_text(checkSHAStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC);
-
-
-	sqlite3_step(checkSHAStmt);
-		int response = sqlite3_column_int(checkSHAStmt, 0);
-		sqlite3_reset(checkSHAStmt);
-
-		if (response == 1) {
-			return true;
-		} else {
-			return false;
-		}
-
-	return false;
-}
-
 std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::list<fs::path> filePaths;
-	std::string query(directoryPath.string());
-	query += "%";
-	const char* path = query.c_str();
-	int pathSize = query.size();
-	int response = -1;
+	std::string path_query(directoryPath.string());
+	path_query += "%";
 
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
-	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(pruneQueryStmt, 1, path, pathSize, SQLITE_STATIC );
-	sqlite3_bind_text(pruneQueryStmt, 2, path, pathSize, SQLITE_STATIC );
+	transaction t (orm_db->begin());
+	std::string *param;
 
-	response = sqlite3_step(pruneQueryStmt);
+	odb::prepared_query<ImageRecord> pq = prep_query->get_files_with_path_query(param);
 
-	while (SQLITE_ROW == response) {
-		std::string resultPath;
-		resultPath.append(reinterpret_cast<const char*>(sqlite3_column_text(pruneQueryStmt, 0)));
-		fs::path p(resultPath);
-		filePaths.push_back(p);
+	*param = path_query;
 
-		response = sqlite3_step(pruneQueryStmt);
+	odb::result<ImageRecord> r(pq.execute());
+
+	for(result<ImageRecord>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		filePaths.push_back(fs::path(itr->getPath()));
 	}
 
-	sqlite3_reset(pruneQueryStmt);
+	t.commit();
 
 	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
 	return filePaths;
 }
 
-void Database::startTransaction() {
-	int response = sqlite3_step(startTrStmt);
-	sqlite3_reset(startTrStmt);
-	if (response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger,
-				"Failed to start transaction: " << sqlite3_errmsg(db));
-	}
-}
-
-void Database::commitTransaction() {
-	int response = sqlite3_step(commitTrStmt);
-	sqlite3_reset(commitTrStmt);
-	if (response != SQLITE_DONE) {
-		LOG4CPLUS_WARN(logger,
-				"Failed to commit transaction: " << sqlite3_errmsg(db));
-	}
-}
-
 void Database::prunePath(std::list<fs::path> filePaths) {
-	boost::mutex::scoped_lock lock(dbMutex);
-
-	bool allOk = true;
-
-	startTransaction();
-
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
-		const char* path = ite->c_str();
-		int pathSize = ite->string().size();
-		int response = 0;
+		ImageRecord ir = get_imagerecord(*ite);
 
-		sqlite3_bind_text(pruneDeleteImageStmt, 1, path, pathSize, SQLITE_TRANSIENT);
-		sqlite3_bind_text(pruneDeleteBadFileStmt, 1, path, pathSize, SQLITE_TRANSIENT);
+		transaction t (orm_db->begin());
 
-		response = sqlite3_step(pruneDeleteImageStmt);
-		if(SQLITE_DONE != response) {allOk = false;}
-		response = sqlite3_step(pruneDeleteBadFileStmt);
-		if(SQLITE_DONE != response) {allOk = false;}
+		if(ir.is_valid()) {
+			orm_db->erase(ir);
+		}
 
-		sqlite3_reset(pruneDeleteImageStmt);
-		sqlite3_reset(pruneDeleteBadFileStmt);
-	}
-
-	commitTransaction();
-
-	if (!allOk) {
-		LOG4CPLUS_WARN(logger, "Failed to delete some file paths");
+		t.commit();
 	}
 }
 
 void Database::addToBatch(db_data data) {
-	int response = 0;
-
 	switch (data.status) {
 	case OK:
-		sqlite3_bind_text(addOkStmt, 1, data.filePath.c_str(), data.filePath.string().size(), SQLITE_STATIC );
-		sqlite3_bind_int64(addOkStmt, 2, data.pHash);
-		sqlite3_bind_text(addOkStmt, 3, data.sha256.c_str(), data.sha256.size(), SQLITE_STATIC);
-
-		response = sqlite3_step(addOkStmt);
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath << " / " << data.pHash);
-			recordsWritten--;
-		}
-		sqlite3_reset(addOkStmt);
-		break;
-
-	case SHA:
-		updateSHA256(data.filePath.string(), data.sha256);
+		add_record(data);
 		break;
 
 	case INVALID:
-		sqlite3_bind_text(addInvalidStmt, 1, data.filePath.c_str(), data.filePath.string().size(), SQLITE_STATIC );
-		response = sqlite3_step(addInvalidStmt);
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add " << data.filePath);
-			recordsWritten--;
-		}
-
-		sqlite3_reset(addInvalidStmt);
+		add_invalid(data);
 		break;
 
 	case FILTER:
-		sqlite3_bind_int64(addFilterStmt, 1, data.pHash);
-		sqlite3_bind_text(addFilterStmt, 2, data.reason.c_str(), data.reason.size(), SQLITE_STATIC);
-		response = sqlite3_step(addFilterStmt);
-
-		if (response != SQLITE_DONE) {
-			LOG4CPLUS_WARN(logger, "Failed to add filter for " << data.pHash << " " << data.reason);
-		}
-
-		sqlite3_reset(addFilterStmt);
+		add_filter(data);
 		break;
 
 	default:
@@ -373,35 +248,69 @@ void Database::addToBatch(db_data data) {
 	}
 }
 
-void Database::prepareStatements() {
-	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
+void Database::add_record(db_data data) {
+	Hash hash = get_hash(data.sha256);
 
-	createPreparedStatement(insertImageQuery, addOkStmt);
-	createPreparedStatement(insertInvalidQuery, addInvalidStmt);
-	createPreparedStatement(insertFilterQuery,addFilterStmt);
-	createPreparedStatement(checkExistsQuery, checkExistsStmt);
-	createPreparedStatement(checkSHAQuery,checkSHAStmt);
-	createPreparedStatement(getSHAQuery, getSHAqueryStmt);
+	if (!hash.is_valid()) {
+		hash = addHashEntry(data.sha256, data.pHash);
+	}
 
-	createPreparedStatement(startTransactionQuery, startTrStmt);
-	createPreparedStatement(commitTransactionQuery, commitTrStmt);
+	if(entryExists(data)) {
+		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
+		recordsWritten--;
+		return;
+	}
 
-	createPreparedStatement(prunePathQuery, pruneQueryStmt);
-	createPreparedStatement(prunePathDeleteImage, pruneDeleteImageStmt);
-	createPreparedStatement(prunePathDeleteBadFile, pruneDeleteBadFileStmt);
+	try{
+	transaction t(orm_db->begin());
 
-	createPreparedStatement(updateSha, updateShaStmt);
+	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
+	orm_db->persist(ir);
+
+	t.commit();
+	} catch (const odb::exception &e) {
+		LOG4CPLUS_ERROR(logger, "Failed to add ImageRecord for path " << data.filePath << " : " << e.what());
+	}
 }
 
-void Database::createPreparedStatement(const char *&query, sqlite3_stmt *&stmt) {
-	int error = 0;
+int Database::add_path_placeholder(std::string path) {
 
-	error = sqlite3_prepare_v2(db, query, strlen(query), &stmt, NULL);
+	transaction t (orm_db->begin());
 
-	if (SQLITE_OK != error) {
-		LOG4CPLUS_ERROR(logger, "Failed to prepare statement " << query << " -> " << error);
-		throw "Prepare statement failed";
-	}
+	ImageRecord ir (path,NULL);
+	int id = orm_db->persist(ir);
+
+	t.commit();
+
+	return id;
+}
+
+void Database::add_invalid(db_data data) {
+	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
+	recordsWritten--;
+	Hash hash = get_hash("");
+	transaction t(orm_db->begin());
+	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
+	orm_db->persist(ir);
+
+	t.commit();
+}
+
+void Database::add_filter(db_data data) {
+	LOG4CPLUS_DEBUG(logger, "Adding filter record for pHash" << data.pHash << " with reason " << data.reason);
+
+	imageHasher::db::table::FilterRecord fr(data.pHash, data.reason);
+
+	transaction t (orm_db->begin());
+
+	orm_db->persist(fr);
+
+	t.commit();
+}
+
+void Database::prepareStatements() {
+	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
+	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
 }
 
 void Database::doWork() {
@@ -427,55 +336,118 @@ unsigned int Database::getRecordsWritten() {
 	return recordsWritten;
 }
 
+
+
 std::string Database::getSHA(fs::path filepath) {
+	std::string sha = "";
 	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
 
-	boost::mutex::scoped_lock lock(dbMutex);
-	sqlite3_bind_text(getSHAqueryStmt, 1, filepath.c_str(), filepath.string().size(), SQLITE_STATIC );
+	ImageRecord ir = get_imagerecord(filepath);
 
-	int response = sqlite3_step(getSHAqueryStmt);
-	std::string sha;
-
-	if (SQLITE_ROW == response) {
-		std::string resultPath;
-		sha = (reinterpret_cast<const char*>(sqlite3_column_text(getSHAqueryStmt, 0)));
-		LOG4CPLUS_DEBUG(logger, "Found SHA " << sha << " for file " << filepath);
+	if(ir.is_valid()) {
+		Hash hash = ir.get_hash();
+		sha = hash.get_sha256();
 	}
-
-	sqlite3_reset(getSHAqueryStmt);
 
 	return sha;
 }
 
-int userVersionCallback(void* dbVersion,int numOfresults,char** valuesAsString,char** columnNames) {
-	int version = -1;
+bool Database::sha_exists(std::string sha) {
+	Hash hash = get_hash(sha);
+	return hash.is_valid();
+}
 
-	if(numOfresults == 1) {
-		version = atoi(valuesAsString[0]);
-		*((int*)dbVersion) = version;
+int64_t Database::getPhash(fs::path filepath) {
+	LOG4CPLUS_DEBUG(logger, "Getting pHash for path " << filepath);
+
+	ImageRecord ir = get_imagerecord(filepath);
+
+	if(ir.is_valid()) {
+		return ir.get_hash().get_pHash();
 	}
 
-	return 0;
+	return -1;
 }
 
-int Database::getUserSchemaVersion() {
-	int dbVersion = -1;
-	sqlite3_exec(db, "PRAGMA user_version;", userVersionCallback, &dbVersion, &errMsg);
+imageHasher::db::table::Hash Database::get_hash(std::string sha) {
+	Hash hash;
+	LOG4CPLUS_DEBUG(logger, "Getting hash for sha " << sha);
 
-	if(errMsg != NULL) {
-		LOG4CPLUS_WARN(logger, "Failed to get user version" << " -> " << errMsg);
-		sqlite3_free(errMsg);
+	transaction t (orm_db->begin());
+
+	std::string *param;
+
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
+
+	*param = sha;
+
+	result<Hash> r (pq.execute());
+
+	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
+		hash = *itr;
+		break;
 	}
 
-	return dbVersion;
+	t.commit();
+
+	return hash;
 }
 
-void Database::setUserSchemaVersion(int version) {
-	std::stringstream command;
-	command << "PRAGMA user_version = ";
-	command << version;
-	command << ";";
+imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
+	Hash hash;
+	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
 
-	Database::exec(command.str().c_str());
+	transaction t(orm_db->begin());
+
+	uint64_t *param;
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
+	*param = phash;
+
+	result<Hash> r(pq.execute());
+
+	for (result<Hash>::iterator itr(r.begin()); itr != r.end(); ++itr) {
+		hash = *itr;
+		break;
+	}
+
+	t.commit();
+
+	return hash;
 }
 
+imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath) {
+	ImageRecord ir;
+
+	try {
+		transaction t(orm_db->begin());
+
+		std::string *p;
+
+		LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << filepath);
+		odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
+
+		*p = filepath.string();
+
+		result<ImageRecord> r(pq.execute());
+
+		for (result<ImageRecord>::iterator itr(r.begin()); itr != r.end(); ++itr) {
+			ir = *itr;
+			break;
+		}
+
+		t.commit();
+	} catch (odb::exception *e) {
+		LOG4CPLUS_ERROR(logger, "Failed to get ImageRecord for path " << filepath << " : " << e);
+	}
+
+	return ir;
+}
+
+Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
+	Hash hash(sha,pHash);
+	transaction t (orm_db->begin());
+		orm_db->persist(hash);
+	t.commit();
+
+	return hash;
+}
