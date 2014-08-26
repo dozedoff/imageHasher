@@ -377,7 +377,13 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 
 	transaction t (orm_db->begin());
 
-	result<Hash> r (orm_db->query<Hash>(query<Hash>::sha256 == sha));
+	std::string *param;
+
+	odb::prepared_query<Hash> pq = prep_query->get_hash_with_sha_query(param);
+
+	*param = sha;
+
+	result<Hash> r (pq.execute());
 
 	for(result<Hash>::iterator itr (r.begin()); itr != r.end(); ++itr) {
 		hash = *itr;
