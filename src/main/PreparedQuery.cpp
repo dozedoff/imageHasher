@@ -74,8 +74,8 @@ odb::prepared_query<imageHasher::db::table::ImageRecord> PreparedQuery::get_file
 	return pq;
 }
 
-odb::prepared_query<imageHasher::db::table::Hash> PreparedQuery::get_hash_with_sha_query(std::string*& path) {
-	odb::prepared_query<Hash> pq(db->lookup_query<Hash>(hash_sha_query, path));
+odb::prepared_query<imageHasher::db::table::Hash> PreparedQuery::get_hash_query(std::string*& sha) {
+	odb::prepared_query<Hash> pq(db->lookup_query<Hash>(hash_sha_query, sha));
 	return pq;
 }
 

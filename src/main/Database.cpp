@@ -379,7 +379,7 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 
 	std::string *param;
 
-	odb::prepared_query<Hash> pq = prep_query->get_hash_with_sha_query(param);
+	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
 
 	*param = sha;
 

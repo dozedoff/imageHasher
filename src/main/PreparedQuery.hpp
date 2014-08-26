@@ -33,6 +33,7 @@
 #include "table/ImageRecord.hpp"
 
 #include <memory>
+#include <inttypes.h>
 
 namespace imageHasher {
 namespace db {
@@ -44,7 +45,7 @@ public:
 
 	odb::prepared_query<imageHasher::db::table::ImageRecord> get_imagerecord_path_query(std::string *& path);
 	odb::prepared_query<imageHasher::db::table::ImageRecord> get_files_with_path_query(std::string *& path);
-	odb::prepared_query<imageHasher::db::table::Hash> get_hash_with_sha_query(std::string *& path);
+	odb::prepared_query<imageHasher::db::table::Hash> get_hash_query(std::string *& sha);
 
 private:
 	odb::database *db;
