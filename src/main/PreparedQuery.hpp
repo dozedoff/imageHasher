@@ -43,10 +43,12 @@ public:
 	virtual ~PreparedQuery();
 
 	odb::prepared_query<imageHasher::db::table::ImageRecord> get_imagerecord_path_query(std::string *& path);
+	odb::prepared_query<imageHasher::db::table::ImageRecord> get_files_with_path_query(std::string *& path);
 
 private:
 	odb::database *db;
 	static void	imageRecord_query_factory (const char* query_name, odb::connection& connection);
+	static void	path_query_factory (const char* query_name, odb::connection& connection);
 };
 
 } /* namespace db */

@@ -41,6 +41,7 @@
 #include <memory>
 
 #define ih_query "image-hash-path-query"
+#define path_query "get-files-with-path-query"
 
 using namespace imageHasher::db::table;
 
@@ -51,6 +52,7 @@ PreparedQuery::PreparedQuery(odb::database *db) {
 	this->db = db;
 
 	db->query_factory (ih_query, &imageRecord_query_factory);
+	db->query_factory(path_query, &path_query_factory);
 }
 
 PreparedQuery::~PreparedQuery() {
@@ -62,6 +64,11 @@ odb::prepared_query<ImageRecord> PreparedQuery::get_imagerecord_path_query(std::
 	return pq;
 }
 
+odb::prepared_query<imageHasher::db::table::ImageRecord> PreparedQuery::get_files_with_path_query(std::string*& path) {
+	odb::prepared_query<ImageRecord> pq (db->lookup_query<ImageRecord>(path_query,path));
+	return pq;
+}
+
 void PreparedQuery::imageRecord_query_factory(const char* query_name, odb::connection& connection) {
 	typedef odb::query<ImageRecord> query;
 
@@ -69,6 +76,15 @@ void PreparedQuery::imageRecord_query_factory(const char* query_name, odb::conne
 	query q (query::path == query::_ref (*p));
 	odb::prepared_query<ImageRecord> pq (connection.prepare_query<ImageRecord> (query_name, q));
 	connection.cache_query (pq, p);
+}
+
+void PreparedQuery::path_query_factory(const char* query_name, odb::connection& connection) {
+	typedef odb::query<ImageRecord> query;
+
+	std::auto_ptr<std::string> p(new std::string);
+	query q(query::path.like(query::_ref(*p)));
+	odb::prepared_query<ImageRecord> pq(connection.prepare_query<ImageRecord>(query_name, q));
+	connection.cache_query(pq, p);
 }
 
 } /* namespace db */
