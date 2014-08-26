@@ -227,9 +227,6 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 }
 
 void Database::addToBatch(db_data data) {
-	int response = 0;
-	int hashId = -1;
-
 	switch (data.status) {
 	case OK:
 		add_record(data);
