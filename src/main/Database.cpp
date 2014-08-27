@@ -451,3 +451,7 @@ Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 
 	return hash;
 }
+
+int Database::prune_hash_table() {
+	return 0;
+}

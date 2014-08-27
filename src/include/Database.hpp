@@ -83,6 +83,7 @@ public:
 	imageHasher::db::table::Hash get_hash(std::string sha);
 	imageHasher::db::table::Hash get_hash(u_int64_t phash);
 	imageHasher::db::table::ImageRecord get_imagerecord(fs::path filepath);
+	int prune_hash_table();
 
 private:
 	odb::database *orm_db;
