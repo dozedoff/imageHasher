@@ -234,3 +234,39 @@ TEST_F(DatabaseTest, get_hash_phash_not_valid) {
 
 	ASSERT_FALSE(hash.is_valid());
 }
+
+TEST_F(DatabaseTest, prune_hash_table_prune_count) {
+	db->add(Database::db_data ("/foo/bar", "1", 41));
+	db->add(Database::db_data ("/foo/bar2", "2", 42));
+	db->add(Database::db_data ("/foo/bar3", "3", 43));
+	db->add(Database::db_data ("/baz/bar", "4", 44));
+
+	db->flush();
+
+	std::list<boost::filesystem::path> paths;
+	paths.push_back(boost::filesystem::path("/foo/"));
+
+	db->prunePath(paths);
+
+	int pruned = db->prune_hash_table();
+
+	ASSERT_EQ(3, pruned);
+}
+
+TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
+	db->add(Database::db_data ("/foo/bar", "1", 41));
+	db->add(Database::db_data ("/foo/bar2", "2", 42));
+	db->add(Database::db_data ("/foo/bar3", "3", 43));
+	db->add(Database::db_data ("/baz/bar", "4", 44));
+
+	db->flush();
+
+	ASSERT_TRUE(db->sha_exists("1"));
+
+	std::list<boost::filesystem::path> paths;
+	paths.push_back(boost::filesystem::path("/foo/"));
+
+	db->prunePath(paths);
+
+	ASSERT_FALSE(db->sha_exists("1"));
+}
