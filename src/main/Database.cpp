@@ -214,6 +214,8 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 }
 
 void Database::prunePath(std::list<fs::path> filePaths) {
+	LOG4CPLUS_INFO(logger, "Pruning " << filePaths.size() << " path(s) from the database.");
+
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
 		ImageRecord ir = get_imagerecord(*ite);
 
