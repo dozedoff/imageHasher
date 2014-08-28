@@ -40,6 +40,8 @@
 
 const char *dbName = "imageHasher.db";
 
+const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
+
 using namespace odb;
 using namespace imageHasher::db::table;
 
@@ -455,5 +457,16 @@ Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 }
 
 int Database::prune_hash_table() {
-	return 0;
+	//TODO Replace with ODB ORM queries
+
+	transaction t (orm_db->begin());
+
+	LOG4CPLUS_INFO(logger, "Pruning hash table...");
+	unsigned long long query_result = orm_db->execute(prune_hash_table_query);
+
+	t.commit();
+
+	LOG4CPLUS_INFO(logger, "Pruned " << query_result << " record(s) from the hash table.");
+
+	return (int)query_result;
 }
