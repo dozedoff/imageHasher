@@ -240,17 +240,16 @@ TEST_F(DatabaseTest, prune_hash_table_prune_count) {
 	db->add(Database::db_data ("/foo/bar2", "2", 42));
 	db->add(Database::db_data ("/foo/bar3", "3", 43));
 	db->add(Database::db_data ("/baz/bar", "4", 44));
+	db->add(Database::db_data ("/baz/foo", "5", 45));
 
 	db->flush();
 
-	std::list<boost::filesystem::path> paths;
-	paths.push_back(boost::filesystem::path("/foo/"));
-
+	std::list<boost::filesystem::path> paths = db->getFilesWithPath(boost::filesystem::path("/foo/"));
 	db->prunePath(paths);
 
 	int pruned = db->prune_hash_table();
 
-	ASSERT_EQ(3, pruned);
+	ASSERT_EQ(4, pruned);
 }
 
 TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
@@ -263,10 +262,10 @@ TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
 
 	ASSERT_TRUE(db->sha_exists("1"));
 
-	std::list<boost::filesystem::path> paths;
-	paths.push_back(boost::filesystem::path("/foo/"));
-
+	std::list<boost::filesystem::path> paths = db->getFilesWithPath(boost::filesystem::path("/foo/"));
 	db->prunePath(paths);
+
+	db->prune_hash_table();
 
 	ASSERT_FALSE(db->sha_exists("1"));
 }
