@@ -466,6 +466,8 @@ int Database::prune_hash_table() {
 
 	t.commit();
 
+	query_result -= 1;
+
 	LOG4CPLUS_INFO(logger, "Pruned " << query_result << " record(s) from the hash table.");
 
 	return (int)query_result;
