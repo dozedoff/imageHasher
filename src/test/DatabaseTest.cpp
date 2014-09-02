@@ -249,7 +249,21 @@ TEST_F(DatabaseTest, prune_hash_table_prune_count) {
 
 	int pruned = db->prune_hash_table();
 
-	ASSERT_EQ(4, pruned);
+	ASSERT_EQ(3, pruned);
+}
+
+TEST_F(DatabaseTest, prune_hash_table_prune_count_zero) {
+	db->add(Database::db_data ("/foo/bar", "1", 41));
+	db->add(Database::db_data ("/foo/bar2", "2", 42));
+	db->add(Database::db_data ("/foo/bar3", "3", 43));
+	db->add(Database::db_data ("/baz/bar", "4", 44));
+	db->add(Database::db_data ("/baz/foo", "5", 45));
+
+	db->flush();
+
+	int pruned = db->prune_hash_table();
+
+	ASSERT_EQ(0, pruned);
 }
 
 TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
