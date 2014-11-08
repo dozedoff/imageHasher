@@ -156,11 +156,15 @@ int Database::drain() {
 	workList = currentList;
 	flipLists();
 
+	NestedTransaction t (orm_db->begin());
+
 	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
 	}
+
+	t.commit();
 
 	workList->clear();
 	return drainCount;
