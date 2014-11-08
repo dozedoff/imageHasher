@@ -11,6 +11,7 @@
  */
 
 #include "../include/Database.hpp"
+#include "NestedTransaction.hpp"
 #include <string>
 
 #include <odb/transaction.hxx>
@@ -31,6 +32,7 @@ const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT 
 
 using namespace odb;
 using namespace imageHasher::db::table;
+using imageHasher::db::NestedTransaction;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -183,7 +185,7 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 
 	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
 
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 	std::string *param;
 
 	odb::prepared_query<ImageRecord> pq = prep_query->get_files_with_path_query(param);
@@ -208,7 +210,7 @@ void Database::prunePath(std::list<fs::path> filePaths) {
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
 		ImageRecord ir = get_imagerecord(*ite);
 
-		transaction t (orm_db->begin());
+		NestedTransaction t (orm_db->begin());
 
 		if(ir.is_valid()) {
 			orm_db->erase(ir);
@@ -253,7 +255,7 @@ void Database::add_record(db_data data) {
 	}
 
 	try{
-	transaction t(orm_db->begin());
+	NestedTransaction t(orm_db->begin());
 
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
@@ -266,7 +268,7 @@ void Database::add_record(db_data data) {
 
 int Database::add_path_placeholder(std::string path) {
 
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 
 	ImageRecord ir (path,NULL);
 	int id = orm_db->persist(ir);
@@ -280,7 +282,7 @@ void Database::add_invalid(db_data data) {
 	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
 	recordsWritten--;
 	Hash hash = get_hash("");
-	transaction t(orm_db->begin());
+	NestedTransaction t(orm_db->begin());
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
 	orm_db->persist(ir);
 
@@ -292,7 +294,7 @@ void Database::add_filter(db_data data) {
 
 	imageHasher::db::table::FilterRecord fr(data.pHash, data.reason);
 
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 
 	orm_db->persist(fr);
 
@@ -364,7 +366,7 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 	Hash hash;
 	LOG4CPLUS_DEBUG(logger, "Getting hash for sha " << sha);
 
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 
 	std::string *param;
 
@@ -388,7 +390,7 @@ imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	Hash hash;
 	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
 
-	transaction t(orm_db->begin());
+	NestedTransaction t(orm_db->begin());
 
 	uint64_t *param;
 	odb::prepared_query<Hash> pq = prep_query->get_hash_query(param);
@@ -410,7 +412,7 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 	ImageRecord ir;
 
 	try {
-		transaction t(orm_db->begin());
+		NestedTransaction t(orm_db->begin());
 
 		std::string *p;
 
@@ -436,7 +438,7 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 
 Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 	Hash hash(sha,pHash);
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 		orm_db->persist(hash);
 	t.commit();
 
@@ -446,7 +448,7 @@ Hash Database::addHashEntry(std::string sha, u_int64_t pHash) {
 int Database::prune_hash_table() {
 	//TODO Replace with ODB ORM queries
 
-	transaction t (orm_db->begin());
+	NestedTransaction t (orm_db->begin());
 
 	LOG4CPLUS_INFO(logger, "Pruning hash table...");
 	unsigned long long query_result = orm_db->execute(prune_hash_table_query);
