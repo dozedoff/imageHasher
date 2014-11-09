@@ -11,6 +11,7 @@
  */
 
 #include "../include/HashWorker.hpp"
+#include "table/Hash.hpp"
 #include "../../commoncpp/src/include/commoncpp.hpp"
 #include "../../commoncpp/src/include/hash/SHA.hpp"
 
@@ -91,8 +92,14 @@ void HashWorker::doWork(int workerNum) {
 				continue;
 			}
 
-			pHash = iph.getLongHash(filepath);
 			sha256 = sha.sha256(filepath);
+
+			if(!db.sha_exists(sha256)) {
+				pHash = iph.getLongHash(filepath);
+			}else{
+				imageHasher::db::table::Hash hash = db.get_hash(sha256);
+				pHash = hash.get_pHash();
+			}
 
 			data.pHash = pHash;
 			data.sha256 = sha256;
