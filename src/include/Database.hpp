@@ -56,6 +56,7 @@ public:
 
 	void add(db_data);
 	unsigned int getRecordsWritten();
+	unsigned int get_skipped_files();
 	void shutdown();
 	int flush();
 	bool entryExists(db_data);
@@ -82,6 +83,7 @@ private:
 	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertShaRecordQueryStmt, *insertpHashRecordQueryStmt, *getPhashQueryStmt, *getpHashidQuery;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
+	unsigned int skipped_files;
 	bool running;
 	boost::thread *workerThread;
 	imageHasher::db::PreparedQuery *prep_query;
