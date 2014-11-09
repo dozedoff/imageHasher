@@ -46,7 +46,7 @@ void HashWorker::start() {
 	tg.join_all();
 	db.shutdown();
 	LOG4CPLUS_INFO(logger, "All worker thread(s) have terminated");
-	LOG4CPLUS_INFO(logger, "Hashed " << db.getRecordsWritten() << " of " << totalNumOfFiles << " images, sha-lookup:"<< db.get_sha_found() << ", skipped " << db.get_skipped_files());
+	LOG4CPLUS_INFO(logger, "Hashed " << db.getRecordsWritten() << " of " << totalNumOfFiles << " images, sha-lookup:"<< db.get_sha_found() << ", skipped " << db.get_skipped_files() << ", invalid: " << db.get_invalid_files());
 }
 
 void HashWorker::clear() {

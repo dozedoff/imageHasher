@@ -290,6 +290,7 @@ int Database::add_path_placeholder(std::string path) {
 void Database::add_invalid(db_data data) {
 	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
 	recordsWritten--;
+	invalid_files++;
 	Hash hash = get_hash("");
 	NestedTransaction t(orm_db->begin());
 	ImageRecord ir = ImageRecord(data.filePath.string(), &hash);
@@ -344,6 +345,10 @@ unsigned int Database::get_skipped_files() {
 
 unsigned int Database::get_sha_found() {
 	return this->sha_found;
+}
+
+unsigned int Database::get_invalid_files() {
+	return this->invalid_files;
 }
 
 std::string Database::getSHA(fs::path filepath) {

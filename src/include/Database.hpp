@@ -58,6 +58,7 @@ public:
 	unsigned int getRecordsWritten();
 	unsigned int get_skipped_files();
 	unsigned int get_sha_found();
+	unsigned int get_invalid_files();
 	void shutdown();
 	int flush();
 	bool entryExists(db_data);
@@ -86,6 +87,7 @@ private:
 	unsigned int recordsWritten;
 	unsigned int skipped_files;
 	unsigned int sha_found;
+	unsigned int invalid_files;
 	bool running;
 	boost::thread *workerThread;
 	imageHasher::db::PreparedQuery *prep_query;
