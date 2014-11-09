@@ -56,7 +56,6 @@ public:
 
 	void add(db_data);
 	unsigned int getRecordsWritten();
-	unsigned int get_skipped_files();
 	unsigned int get_sha_found();
 	unsigned int get_invalid_files();
 	void shutdown();
@@ -85,7 +84,6 @@ private:
 	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertShaRecordQueryStmt, *insertpHashRecordQueryStmt, *getPhashQueryStmt, *getpHashidQuery;
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
-	unsigned int skipped_files;
 	unsigned int sha_found;
 	unsigned int invalid_files;
 	bool running;

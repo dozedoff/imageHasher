@@ -80,7 +80,6 @@ void Database::init() {
 	boost::mutex::scoped_lock lock(dbMutex);
 	this->currentList = &dataA;
 	this->recordsWritten = 0;
-	this->skipped_files = 0;
 	this->sha_found = 0;
 	this->running = true;
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
@@ -251,7 +250,6 @@ void Database::add_record(db_data data) {
 	if(entryExists(data)) {
 		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
 		recordsWritten--;
-		skipped_files++;
 		return;
 	}
 
@@ -337,10 +335,6 @@ void Database::doWork() {
 
 unsigned int Database::getRecordsWritten() {
 	return recordsWritten;
-}
-
-unsigned int Database::get_skipped_files() {
-	return this->skipped_files;
 }
 
 unsigned int Database::get_sha_found() {
