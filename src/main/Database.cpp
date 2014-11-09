@@ -80,6 +80,7 @@ void Database::init() {
 	boost::mutex::scoped_lock lock(dbMutex);
 	this->currentList = &dataA;
 	this->recordsWritten = 0;
+	this->invalid_files = 0;
 	this->sha_found = 0;
 	this->running = true;
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
