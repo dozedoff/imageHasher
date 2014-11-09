@@ -81,6 +81,7 @@ void Database::init() {
 	this->currentList = &dataA;
 	this->recordsWritten = 0;
 	this->skipped_files = 0;
+	this->sha_found = 0;
 	this->running = true;
 	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
 
@@ -251,6 +252,8 @@ void Database::add_record(db_data data) {
 
 	if (!hash.is_valid()) {
 		hash = addHashEntry(data.sha256, data.pHash);
+	}else{
+		sha_found++;
 	}
 
 	if(entryExists(data)) {
@@ -337,6 +340,10 @@ unsigned int Database::getRecordsWritten() {
 
 unsigned int Database::get_skipped_files() {
 	return this->skipped_files;
+}
+
+unsigned int Database::get_sha_found() {
+	return this->sha_found;
 }
 
 std::string Database::getSHA(fs::path filepath) {

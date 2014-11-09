@@ -57,6 +57,7 @@ public:
 	void add(db_data);
 	unsigned int getRecordsWritten();
 	unsigned int get_skipped_files();
+	unsigned int get_sha_found();
 	void shutdown();
 	int flush();
 	bool entryExists(db_data);
@@ -84,6 +85,7 @@ private:
 	log4cplus::Logger logger;
 	unsigned int recordsWritten;
 	unsigned int skipped_files;
+	unsigned int sha_found;
 	bool running;
 	boost::thread *workerThread;
 	imageHasher::db::PreparedQuery *prep_query;
