@@ -34,10 +34,12 @@ private:
 	int numOfWorkers;
 	std::list<path> imagePaths;
 	boost::mutex workQueueMutex;
+	boost::mutex stats_mutex;
 	log4cplus::Logger logger;
 	Database db;
 	bool running;
 	int totalNumOfFiles;
+	unsigned int skipped_files;
 
 	typedef std::list<path> pathList;
 

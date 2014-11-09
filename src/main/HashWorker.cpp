@@ -30,6 +30,7 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashWorker"));
 	totalNumOfFiles = imagePaths->size();
+	skipped_files = 0;
 }
 
 void HashWorker::start() {
@@ -75,11 +76,14 @@ void HashWorker::doWork(int workerNum) {
 	std::string filepath;
 	Database::db_data data;
 
+	unsigned int local_skipped_files = 0;
+
 	while (running) {
 		path image = getWork();
 
 		if (image.empty() || !boost::filesystem::exists(image)) {
 			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Path empty or invalid, skipping... " << image);
+			local_skipped_files++;
 			continue;
 		}
 
@@ -89,6 +93,7 @@ void HashWorker::doWork(int workerNum) {
 
 			if (db.entryExists(data)) {
 				LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Found " << image << " skipping...");
+				local_skipped_files++;
 				continue;
 			}
 
@@ -112,6 +117,9 @@ void HashWorker::doWork(int workerNum) {
 			db.add(data);
 		}
 	}
+
+	boost::mutex::scoped_lock lock(stats_mutex);
+	skipped_files += local_skipped_files;
 
 	LOG4CPLUS_INFO(logger, "HashWorker " << workerNum << ": " << "No more work, worker thread shutting down");
 }
