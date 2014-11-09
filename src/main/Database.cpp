@@ -248,19 +248,19 @@ void Database::addToBatch(db_data data) {
 }
 
 void Database::add_record(db_data data) {
+	if(entryExists(data)) {
+		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
+		recordsWritten--;
+		skipped_files++;
+		return;
+	}
+
 	Hash hash = get_hash(data.sha256);
 
 	if (!hash.is_valid()) {
 		hash = addHashEntry(data.sha256, data.pHash);
 	}else{
 		sha_found++;
-	}
-
-	if(entryExists(data)) {
-		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
-		recordsWritten--;
-		skipped_files++;
-		return;
 	}
 
 	try{
