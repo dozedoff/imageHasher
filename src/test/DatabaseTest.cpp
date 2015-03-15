@@ -62,6 +62,22 @@ TEST_F(DatabaseTest, writeRecordsWithInvalid) {
 	ASSERT_EQ(2, db->getRecordsWritten());
 }
 
+TEST_F(DatabaseTest, getInvalidFiles) {
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar", "bar",0);
+	Database::db_data dbd3("notValid", "",0);
+
+	dbd3.status = Database::INVALID;
+
+	db->add(dbd1);
+	db->add(dbd2);
+	db->add(dbd3);
+
+	db->shutdown();
+
+	ASSERT_EQ(1, db->get_invalid_files());
+}
+
 TEST_F(DatabaseTest, writeDuplicateRecords) {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("foo","foo",0);
@@ -84,6 +100,18 @@ TEST_F(DatabaseTest, writeDuplicateRecordsDifferentPath) {
 	db->shutdown();
 
 	ASSERT_EQ(2, db->getRecordsWritten());
+}
+
+TEST_F(DatabaseTest, getShaFound) {
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar","foo",0);
+
+	db->add(dbd1);
+	db->add(dbd2);
+
+	db->shutdown();
+
+	ASSERT_EQ(1, db->get_sha_found());
 }
 
 TEST_F(DatabaseTest, entryExistsNonExistant) {
