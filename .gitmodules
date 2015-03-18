@@ -1,3 +1,6 @@
 [submodule "commoncpp"]
 	path = commoncpp
 	url = git@github.com:dozedoff/commoncpp.git
+[submodule "cppzmq"]
+	path = cppzmq
+	url = git@github.com:zeromq/cppzmq.git
