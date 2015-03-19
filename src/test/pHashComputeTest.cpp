@@ -14,6 +14,7 @@ protected:
 	imageHasher::pHashCompute *phc;
 
 	pHashComputeTest() {
+		phc = NULL;
 		phc = new imageHasher::pHashCompute(4,5555,"tcp://127.0.0.1:4444");
 	}
 
