@@ -34,16 +34,16 @@ pHashCompute::pHashCompute(int workers, int listen_port, std::string remote_host
 void pHashCompute::setup_sockets(int listen_port) {
 	this->context = new zmq::context_t(1);
 
-	this->workers = new zmq::socket_t(*(this->context), ZMQ_DEALER);
+	this->workers = new zmq::socket_t(*(this->context), ZMQ_PUSH);
 	this->workers->bind(this->listen_socket_worker.c_str());
-	LOG4CPLUS_INFO(logger, "Listening for clients on port " << listen_port);
 
 	std::stringstream ss;
 	ss << this->listen_socket_client << listen_port;
 	std::string client_socket = ss.str();
 
-	this->client = new zmq::socket_t(*(this->context), ZMQ_ROUTER);
+	this->client = new zmq::socket_t(*(this->context), ZMQ_PULL);
 	this->client->bind(client_socket.c_str());
+	LOG4CPLUS_INFO(logger, "Listening for clients on port " << listen_port);
 }
 
 void pHashCompute::create_threads(int num_of_threads) {
