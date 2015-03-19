@@ -22,6 +22,6 @@ protected:
 	}
 };
 
-TEST_F(pHashComputeTest, shutdown) {
+TEST_F(pHashComputeTest, construction) {
 	ASSERT_TRUE(phc != NULL);
 }
