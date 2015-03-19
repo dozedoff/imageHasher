@@ -44,6 +44,7 @@ private:
 	void setup_sockets(int listen_port);
 	void create_threads(int num_of_threads);
 	void process_requests(int worker_no);
+	void route_requests();
 };
 
 } /* namespace imageHasher */

@@ -54,6 +54,10 @@ void pHashCompute::create_threads(int num_of_threads) {
 		this->worker_group.add_thread(t);
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
+
+	LOG4CPLUS_INFO(logger, "Starting proxy thread");
+	boost::thread *p = new boost::thread(&pHashCompute::route_requests, this);
+	this->worker_group.add_thread(p);
 }
 
 void pHashCompute::process_requests(int worker_no) {
@@ -75,6 +79,14 @@ void pHashCompute::process_requests(int worker_no) {
 
 	} catch (zmq::error_t const &e) {
 		LOG4CPLUS_ERROR(logger, "Worker terminated with " << e.what());
+	}
+}
+
+void pHashCompute::route_requests() {
+	try {
+		zmq::proxy(*(this->client),*(this->workers), NULL);
+	} catch (zmq::error_t const &e) {
+		LOG4CPLUS_ERROR(logger, "Proxy terminated with " << e.what());
 	}
 }
 
