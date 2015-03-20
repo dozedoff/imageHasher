@@ -44,6 +44,11 @@ void pHashCompute::setup_sockets(int listen_port) {
 	this->client = new zmq::socket_t(*(this->context), ZMQ_PULL);
 	this->client->bind(client_socket.c_str());
 	LOG4CPLUS_INFO(logger, "Listening for clients on port " << listen_port);
+
+std::string pHashCompute::create_address(std::string ip, int port) {
+	std::stringstream ss;
+	ss << this->server_socket << ip << ":" << port;
+	return ss.str();
 }
 
 void pHashCompute::create_threads(int num_of_threads) {

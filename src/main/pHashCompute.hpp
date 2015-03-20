@@ -45,6 +45,7 @@ private:
 	void create_threads(int num_of_threads);
 	void process_requests(int worker_no);
 	void route_requests();
+	std::string create_address(std::string ip, int port);
 };
 
 } /* namespace imageHasher */
