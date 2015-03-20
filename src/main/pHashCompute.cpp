@@ -19,31 +19,39 @@
 using namespace log4cplus;
 
 namespace imageHasher {
-const std::string pHashCompute::listen_socket_client = "tcp://*:";
-const std::string pHashCompute::listen_socket_worker = "inproc://workers";
+const std::string pHashCompute::server_socket = "tcp://";
+const std::string pHashCompute::worker_push_socket = "inproc://workertasks";
+const std::string pHashCompute::worker_pull_socket = "inproc://workerresults";
 
-pHashCompute::pHashCompute(int workers, int listen_port, std::string remote_host) {
+pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers) {
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
-	setup_sockets(listen_port);
+	setup_sockets (server_ip,remote_push_port, remote_pull_port);
 	create_threads(workers);
 }
 
-//TODO do ZMQ routing
-
-void pHashCompute::setup_sockets(int listen_port) {
+void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remote_pull_port) {
 	this->context = new zmq::context_t(1);
 
-	this->workers = new zmq::socket_t(*(this->context), ZMQ_PUSH);
-	this->workers->bind(this->listen_socket_worker.c_str());
+	// setup worker thread sockets
+	this->worker_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
+	this->worker_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
 
-	std::stringstream ss;
-	ss << this->listen_socket_client << listen_port;
-	std::string client_socket = ss.str();
+	this->worker_push->bind(this->worker_push_socket.c_str());
+	this->worker_pull->bind(this->worker_pull_socket.c_str());
 
-	this->client = new zmq::socket_t(*(this->context), ZMQ_PULL);
-	this->client->bind(client_socket.c_str());
-	LOG4CPLUS_INFO(logger, "Listening for clients on port " << listen_port);
+	// setup remote server sockets
+	std::string pull_addr = create_address(ip, remote_push_port);
+	std::string push_addr = create_address(ip, remote_pull_port);
+
+	this->client_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
+	this->client_pull->connect(pull_addr.c_str());
+	LOG4CPLUS_INFO(logger, "Connected to remote server " << pull_addr << " for pulling tasks");
+
+	this->client_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
+	this->client_push->connect(push_addr.c_str());
+	LOG4CPLUS_INFO(logger, "Connected to remote server " << push_addr << " for pushing results");
+}
 
 std::string pHashCompute::create_address(std::string ip, int port) {
 	std::stringstream ss;
@@ -60,26 +68,32 @@ void pHashCompute::create_threads(int num_of_threads) {
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
 
-	LOG4CPLUS_INFO(logger, "Starting proxy thread");
-	boost::thread *p = new boost::thread(&pHashCompute::route_requests, this);
-	this->worker_group.add_thread(p);
+	LOG4CPLUS_INFO(logger, "Starting task proxy thread");
+	boost::thread *tp = new boost::thread(&pHashCompute::route_tasks, this);
+	this->worker_group.add_thread(tp);
+
+	LOG4CPLUS_INFO(logger, "Starting result proxy thread");
+	boost::thread *rp = new boost::thread(&pHashCompute::route_results, this);
+	this->worker_group.add_thread(rp);
 }
 
 void pHashCompute::process_requests(int worker_no) {
-	zmq::socket_t worker_socket(*(this->context), ZMQ_REP);
-	worker_socket.connect(this->listen_socket_worker.c_str());
+	zmq::socket_t tasks(*(this->context), ZMQ_PULL);
+	zmq::socket_t results(*(this->context), ZMQ_PUSH);
+
+	tasks.connect(this->worker_push_socket.c_str());
+	results.connect(this->worker_pull_socket.c_str());
 
 	try {
 
 	while(!boost::this_thread::interruption_requested()) {
 		zmq::message_t request;
-		worker_socket.recv (&request);
-		std::cout << "Received request: [" << (char*) request.data() << "]" << std::endl;
+		tasks.recv (&request);
 
 		// Send reply back to client
 		zmq::message_t reply (6);
 		memcpy ((void *) reply.data (), "World", 6);
-		worker_socket.send (reply);
+		results.send (reply);
 	}
 
 	} catch (zmq::error_t const &e) {
@@ -87,22 +101,37 @@ void pHashCompute::process_requests(int worker_no) {
 	}
 }
 
-void pHashCompute::route_requests() {
+void pHashCompute::route_tasks() {
 	try {
-		zmq::proxy(*(this->client),*(this->workers), NULL);
+		zmq::proxy(this->client_pull,this->worker_push, NULL);
 	} catch (zmq::error_t const &e) {
-		LOG4CPLUS_ERROR(logger, "Proxy terminated with " << e.what());
+		LOG4CPLUS_ERROR(logger, "Task proxy terminated with " << e.what());
+	}
+}
+
+void pHashCompute::route_results() {
+	try {
+		zmq::proxy(this->worker_pull,this->client_push, NULL);
+	} catch (zmq::error_t const &e) {
+		LOG4CPLUS_ERROR(logger, "Result proxy terminated with " << e.what());
 	}
 }
 
 pHashCompute::~pHashCompute() {
-	this->client->close();
-	this->workers->close();
+	this->client_pull->close();
+	this->client_push->close();
+
+	this->worker_pull->close();
+	this->worker_push->close();
 
 	this->context->close();
 
-	delete (this->client);
-	delete (this->workers);
+	delete (this->client_pull);
+	delete (this->client_push);
+
+	delete (this->worker_pull);
+	delete (this->worker_push);
+
 	delete (context);
 }
 

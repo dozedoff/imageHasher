@@ -26,25 +26,27 @@ namespace imageHasher {
 
 class pHashCompute {
 public:
-	pHashCompute(int workers, int listen_port, std::string remote_host);
+	pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers);
 	virtual ~pHashCompute();
 
 private:
-	static const std::string listen_socket_client;
-	static const std::string listen_socket_worker;
+	static const std::string server_socket;
+	static const std::string worker_pull_socket;
+	static const std::string worker_push_socket;
 
 	log4cplus::Logger logger;
 
 	zmq::context_t *context;
-	zmq::socket_t *workers;
-	zmq::socket_t *client;
+	zmq::socket_t *worker_pull, *worker_push;
+	zmq::socket_t *client_pull, *client_push;
 
 	boost::thread_group worker_group;
 
-	void setup_sockets(int listen_port);
+	void setup_sockets(std::string ip, int remote_push_port, int remote_pull_port);
 	void create_threads(int num_of_threads);
 	void process_requests(int worker_no);
-	void route_requests();
+	void route_tasks();
+	void route_results();
 	std::string create_address(std::string ip, int port);
 };
 
