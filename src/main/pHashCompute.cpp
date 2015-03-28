@@ -92,16 +92,20 @@ void pHashCompute::process_requests(int worker_no) {
 	tasks.connect(this->worker_push_socket.c_str());
 	results.connect(this->worker_pull_socket.c_str());
 
+	LOG4CPLUS_INFO(logger, "Worker thread " << worker_no << " connected and ready");
+
 	try {
 
 	while(!boost::this_thread::interruption_requested()) {
 		zmq::message_t request;
 		tasks.recv (&request);
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " got a request with size " << request.size());
 
 		// Send reply back to client
 		zmq::message_t reply (6);
 		memcpy ((void *) reply.data (), "World", 6);
 		results.send (reply);
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sent response with size "  << reply.size());
 	}
 
 	} catch (zmq::error_t const &e) {
@@ -111,6 +115,7 @@ void pHashCompute::process_requests(int worker_no) {
 
 void pHashCompute::route_tasks() {
 	try {
+		LOG4CPLUS_INFO(logger, "Task router thread ready");
 		zmq::proxy(this->client_pull,this->worker_push, NULL);
 	} catch (zmq::error_t const &e) {
 		LOG4CPLUS_ERROR(logger, "Task proxy terminated with " << e.what());
@@ -119,6 +124,7 @@ void pHashCompute::route_tasks() {
 
 void pHashCompute::route_results() {
 	try {
+		LOG4CPLUS_INFO(logger, "Result router thread ready");
 		zmq::proxy(this->worker_pull,this->client_push, NULL);
 	} catch (zmq::error_t const &e) {
 		LOG4CPLUS_ERROR(logger, "Result proxy terminated with " << e.what());
