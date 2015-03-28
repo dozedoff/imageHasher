@@ -57,6 +57,20 @@ TEST_F(pHashComputeTest, pull_socket_connected) {
 	ASSERT_TRUE(pull_socket->connected());
 }
 
+TEST_F(pHashComputeTest, send_test) {
+	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
+	Magick::Blob blob;
+	img.write(&blob);
+
+	zmq::message_t request(blob.length());
+
+	memcpy(request.data(),blob.data(),blob.length());
+
+	bool response = push_socket->send(request);
+
+	ASSERT_TRUE(response);
+}
+
 TEST_F(pHashComputeTest, DISABLED_hashImage_response_length) {
 	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
 	Magick::Blob blob;
