@@ -46,10 +46,18 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 
 	this->client_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
 	this->client_pull->connect(pull_addr.c_str());
+
+	if(!this->client_pull->connected()) {
+		throw new std::runtime_error("Failed to connect to client pull port");
+	}
 	LOG4CPLUS_INFO(logger, "Connected to remote server " << pull_addr << " for pulling tasks");
 
 	this->client_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
 	this->client_push->connect(push_addr.c_str());
+
+	if(!this->client_push->connected()) {
+			throw new std::runtime_error("Failed to connect to client pull port");
+	}
 	LOG4CPLUS_INFO(logger, "Connected to remote server " << push_addr << " for pushing results");
 }
 
