@@ -5,6 +5,7 @@ project imageHasher
 
 import testing ;
 
+using gcc : c++11 : "g++" : <cxxflags>-std=c++11 ;
 
 lib log4cplus : : <name>log4cplus ;
 lib boost-fs : : <name>boost_filesystem ;
