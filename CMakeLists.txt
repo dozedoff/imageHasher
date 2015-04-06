@@ -16,12 +16,14 @@ file(GLOB ihcommonsrc src/main/*.cpp)
 # Include additional header files
 include_directories(src/include)
 include_directories(/usr/include/GraphicsMagick/)
+include_directories(cppzmq)
 
 # Find libraries
 find_library(gtest gtest)
 find_library(log4cplus log4cplus)
 find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
+find_library(zmq zmq)
 
 ## Find packages
 
@@ -42,7 +44,7 @@ add_executable(hashUtil src/HashUtil.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite})
-target_link_libraries(ihcommon commoncpp odbtable ${log4cplus} ${Boost_LIBRARIES})
+target_link_libraries(ihcommon commoncpp odbtable zmq ${log4cplus} ${Boost_LIBRARIES})
 
 target_link_libraries(imageHasher ihcommon commoncpp)
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
