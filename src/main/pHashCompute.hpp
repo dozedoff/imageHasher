@@ -42,6 +42,9 @@ private:
 
 	boost::thread_group worker_group;
 
+	std::string pull_addr;
+	std::string push_addr;
+
 	void setup_sockets(std::string ip, int remote_push_port, int remote_pull_port);
 	void create_threads(int num_of_threads);
 	void process_requests(int worker_no);

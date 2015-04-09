@@ -27,38 +27,38 @@ pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remo
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
 	setup_sockets (server_ip,remote_push_port, remote_pull_port);
-	create_threads(workers);
+	create_threads(1);
 }
 
 void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remote_pull_port) {
 	this->context = new zmq::context_t(1);
-
-	// setup worker thread sockets
+//
+//	// setup worker thread sockets
 	this->worker_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
 	this->worker_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
-
-	this->worker_push->bind(this->worker_push_socket.c_str());
-	this->worker_pull->bind(this->worker_pull_socket.c_str());
-
-	// setup remote server sockets
-	std::string pull_addr = create_address(ip, remote_push_port);
-	std::string push_addr = create_address(ip, remote_pull_port);
-
+//
+//	this->worker_push->bind(this->worker_push_socket.c_str());
+//	this->worker_pull->bind(this->worker_pull_socket.c_str());
+//
+//	// setup remote server sockets
+	this->pull_addr = create_address(ip, remote_push_port);
+	this->push_addr = create_address(ip, remote_pull_port);
+//
 	this->client_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
-	this->client_pull->connect(pull_addr.c_str());
-
-	if(!this->client_pull->connected()) {
-		throw new std::runtime_error("Failed to connect to client pull port");
-	}
-	LOG4CPLUS_INFO(logger, "Connected to remote server " << pull_addr << " for pulling tasks");
-
+//	this->client_pull->connect(pull_addr.c_str());
+//
+//	if(!this->client_pull->connected()) {
+//		throw new std::runtime_error("Failed to connect to client pull port");
+//	}
+//	LOG4CPLUS_INFO(logger, "Connected to remote server " << pull_addr << " for pulling tasks");
+//
 	this->client_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
-	this->client_push->connect(push_addr.c_str());
-
-	if(!this->client_push->connected()) {
-			throw new std::runtime_error("Failed to connect to client pull port");
-	}
-	LOG4CPLUS_INFO(logger, "Connected to remote server " << push_addr << " for pushing results");
+//	this->client_push->connect(push_addr.c_str());
+//
+//	if(!this->client_push->connected()) {
+//			throw new std::runtime_error("Failed to connect to client pull port");
+//	}
+//	LOG4CPLUS_INFO(logger, "Connected to remote server " << push_addr << " for pushing results");
 }
 
 std::string pHashCompute::create_address(std::string ip, int port) {
@@ -75,22 +75,22 @@ void pHashCompute::create_threads(int num_of_threads) {
 		this->worker_group.add_thread(t);
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
-
-	LOG4CPLUS_INFO(logger, "Starting task proxy thread");
-	boost::thread *tp = new boost::thread(&pHashCompute::route_tasks, this);
-	this->worker_group.add_thread(tp);
-
-	LOG4CPLUS_INFO(logger, "Starting result proxy thread");
-	boost::thread *rp = new boost::thread(&pHashCompute::route_results, this);
-	this->worker_group.add_thread(rp);
+//
+//	LOG4CPLUS_INFO(logger, "Starting task proxy thread");
+//	boost::thread *tp = new boost::thread(&pHashCompute::route_tasks, this);
+//	this->worker_group.add_thread(tp);
+//
+//	LOG4CPLUS_INFO(logger, "Starting result proxy thread");
+//	boost::thread *rp = new boost::thread(&pHashCompute::route_results, this);
+//	this->worker_group.add_thread(rp);
 }
 
 void pHashCompute::process_requests(int worker_no) {
 	zmq::socket_t tasks(*(this->context), ZMQ_PULL);
 	zmq::socket_t results(*(this->context), ZMQ_PUSH);
 
-	tasks.connect(this->worker_push_socket.c_str());
-	results.connect(this->worker_pull_socket.c_str());
+	tasks.connect(this->pull_addr.c_str());
+	results.connect(this->push_addr.c_str());
 
 	LOG4CPLUS_INFO(logger, "Worker thread " << worker_no << " connected and ready");
 
