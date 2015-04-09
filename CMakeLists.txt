@@ -55,6 +55,7 @@ if(GTEST_FOUND AND BUILD_TESTS)
 	target_link_libraries(imagehasher_test ihcommon ${GTEST_LIBRARIES})
 
 	enable_testing()
+	add_test(NAME imagehasher_test COMMAND imagehasher_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_custom_command(TARGET imagehasher_test POST_BUILD COMMAND ctest -V -R imagehasher_test)
 elseif(GTEST_FOUND)
 	message("Skipping tests...")
