@@ -70,6 +70,16 @@ std::string pHashCompute::create_address(std::string ip, int port) {
 	return ss.str();
 }
 
+void pHashCompute::thread_ready_wait(int num_of_threads) {
+	// wait for worker ready responses
+	for (int response = 0; response < num_of_threads; response++) {
+		zmq::message_t ready_msg;
+		this->worker_ready->recv(&ready_msg);
+		int worker_no = *((int*) ready_msg.data()); // TODO this is unsafe and will explode with worker numbers > 255
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " is ready");
+	}
+}
+
 void pHashCompute::create_threads(int num_of_threads) {
 	LOG4CPLUS_INFO(logger, "Starting " << num_of_threads << " worker thread(s)");
 
@@ -79,13 +89,7 @@ void pHashCompute::create_threads(int num_of_threads) {
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
 
-	// wait for worker ready responses
-	for(int response = 0; response < num_of_threads; response++) {
-		zmq::message_t ready_msg;
-		this->worker_ready->recv(&ready_msg);
-		int worker_no = *((int*)ready_msg.data()); // TODO this is unsafe and will explode with worker numbers > 255
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " is ready");
-	}
+	thread_ready_wait(num_of_threads);
 
 //
 //	LOG4CPLUS_INFO(logger, "Starting task proxy thread");

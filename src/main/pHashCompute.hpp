@@ -53,6 +53,7 @@ private:
 	void route_tasks();
 	void route_results();
 	std::string create_address(std::string ip, int port);
+	void thread_ready_wait(int num_of_threads);
 };
 
 } /* namespace imageHasher */
