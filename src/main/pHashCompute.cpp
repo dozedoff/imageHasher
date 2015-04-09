@@ -104,8 +104,9 @@ void pHashCompute::process_requests(int worker_no) {
 		// Send reply back to client
 		zmq::message_t reply (6);
 		memcpy ((void *) reply.data (), "World", 6);
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sending response with size "  << reply.size());
 		results.send (reply);
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sent response with size "  << reply.size());
+
 	}
 
 	} catch (zmq::error_t const &e) {
