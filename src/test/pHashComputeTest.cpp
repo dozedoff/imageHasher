@@ -71,7 +71,7 @@ TEST_F(pHashComputeTest, hashImage_response_length) {
 	zmq::message_t response;
 	pull_socket->recv(&response);
 
-	ASSERT_EQ(6, response.size());
+	ASSERT_EQ(sizeof(int64_t), response.size());
 }
 
 TEST_F(pHashComputeTest, hashImage_response_content) {
@@ -87,34 +87,9 @@ TEST_F(pHashComputeTest, hashImage_response_content) {
 
 	zmq::message_t response;
 	pull_socket->recv(&response);
-
-	ASSERT_STREQ("World", (char*)response.data());
-}
-
-TEST_F(pHashComputeTest, hashImage_2_requests) {
-	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
-	Magick::Blob blob;
-	img.write(&blob);
-
-	zmq::message_t request(blob.length());
-	memcpy(request.data(),blob.data(),blob.length());
-
-	zmq::message_t req2;
-	req2.copy(&request);
-
-	push_socket->send(request);
-
-	zmq::message_t response;
-	pull_socket->recv(&response);
-
-	ASSERT_STREQ("World", (char*)response.data());
-
-	push_socket->send(req2);
-
-	response.rebuild();
-	pull_socket->recv(&response);
-
-	ASSERT_STREQ("World", (char*)response.data());
+	long pHash = 0;
+	memcpy(&pHash, response.data(), sizeof(long));
+	ASSERT_EQ(4092185452341198848, pHash);
 }
 
 TEST_F(pHashComputeTest, hashImage_multiple_messages) {

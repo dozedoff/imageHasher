@@ -118,6 +118,8 @@ void pHashCompute::process_requests(int worker_no) {
 	tasks.connect(this->worker_push_socket.c_str());
 	results.connect(this->worker_pull_socket.c_str());
 
+	ImagePHash iph(32,9);
+
 	while ((ready.connected() && tasks.connected() && results.connected()) != true) {
 
 	}
@@ -132,13 +134,14 @@ void pHashCompute::process_requests(int worker_no) {
 		zmq::message_t request;
 		tasks.recv (&request);
 		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " got a request with size " << request.size());
+		Magick::Blob blob(request.data(),request.size());
+		long pHash = iph.getLongHash(blob);
 
 		// Send reply back to client
-		zmq::message_t reply (6);
-		memcpy ((void *) reply.data (), "World", 6);
+		zmq::message_t reply (sizeof(long));
+		memcpy ((void *) reply.data (), &pHash, sizeof(long));
 		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sending response with size "  << reply.size());
 		results.send (reply);
-
 	}
 
 	} catch (zmq::error_t const &e) {
