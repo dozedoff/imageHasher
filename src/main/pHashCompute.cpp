@@ -22,12 +22,13 @@ namespace imageHasher {
 const std::string pHashCompute::server_socket = "tcp://";
 const std::string pHashCompute::worker_push_socket = "inproc://workertasks";
 const std::string pHashCompute::worker_pull_socket = "inproc://workerresults";
+const std::string pHashCompute::worker_ready_socket = "inproc://workerready";
 
 pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers) {
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
 	setup_sockets (server_ip,remote_push_port, remote_pull_port);
-	create_threads(1);
+	create_threads(workers);
 }
 
 void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remote_pull_port) {
@@ -36,10 +37,12 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 //	// setup worker thread sockets
 	this->worker_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
 	this->worker_pull = new zmq::socket_t(*(this->context), ZMQ_PULL);
+	this->worker_ready = new zmq::socket_t(*(this->context), ZMQ_PULL);
 //
 //	this->worker_push->bind(this->worker_push_socket.c_str());
 //	this->worker_pull->bind(this->worker_pull_socket.c_str());
-//
+	this->worker_ready->bind(this->worker_ready_socket.c_str());
+
 //	// setup remote server sockets
 	this->pull_addr = create_address(ip, remote_push_port);
 	this->push_addr = create_address(ip, remote_pull_port);
@@ -75,6 +78,15 @@ void pHashCompute::create_threads(int num_of_threads) {
 		this->worker_group.add_thread(t);
 		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
 	}
+
+	// wait for worker ready responses
+	for(int response = 0; response < num_of_threads; response++) {
+		zmq::message_t ready_msg;
+		this->worker_ready->recv(&ready_msg);
+		int worker_no = *((int*)ready_msg.data()); // TODO this is unsafe and will explode with worker numbers > 255
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " is ready");
+	}
+
 //
 //	LOG4CPLUS_INFO(logger, "Starting task proxy thread");
 //	boost::thread *tp = new boost::thread(&pHashCompute::route_tasks, this);
@@ -88,11 +100,19 @@ void pHashCompute::create_threads(int num_of_threads) {
 void pHashCompute::process_requests(int worker_no) {
 	zmq::socket_t tasks(*(this->context), ZMQ_PULL);
 	zmq::socket_t results(*(this->context), ZMQ_PUSH);
+	zmq::socket_t ready(*(this->context), ZMQ_PUSH);
 
+	ready.connect(this->worker_ready_socket.c_str());
 	tasks.connect(this->pull_addr.c_str());
 	results.connect(this->push_addr.c_str());
 
-	LOG4CPLUS_INFO(logger, "Worker thread " << worker_no << " connected and ready");
+	while ((ready.connected() && tasks.connected() && results.connected()) != true) {
+
+	}
+
+	zmq::message_t ready_msg(1);
+	memset(ready_msg.data(), worker_no, 1);
+	ready.send(ready_msg);
 
 	try {
 
@@ -138,11 +158,13 @@ pHashCompute::~pHashCompute() {
 
 	this->worker_pull->close();
 	this->worker_push->close();
+	this->worker_ready->close();
 
 	this->context->close();
 
 	delete (this->client_pull);
 	delete (this->client_push);
+	delete (this->worker_ready);
 
 	delete (this->worker_pull);
 	delete (this->worker_push);

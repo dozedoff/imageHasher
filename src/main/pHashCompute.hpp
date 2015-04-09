@@ -33,12 +33,14 @@ private:
 	static const std::string server_socket;
 	static const std::string worker_pull_socket;
 	static const std::string worker_push_socket;
+	static const std::string worker_ready_socket;
 
 	log4cplus::Logger logger;
 
 	zmq::context_t *context;
 	zmq::socket_t *worker_pull, *worker_push;
 	zmq::socket_t *client_pull, *client_push;
+	zmq::socket_t *worker_ready;
 
 	boost::thread_group worker_group;
 
