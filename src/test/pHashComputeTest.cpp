@@ -131,7 +131,7 @@ TEST_F(pHashComputeTest, hashImage_2_requests) {
 	ASSERT_STREQ("World", (char*)response.data());
 }
 
-TEST_F(pHashComputeTest, DISABLED_hashImage_multiple_messages) {
+TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
 	Magick::Blob blob;
 	img.write(&blob);
@@ -150,10 +150,11 @@ TEST_F(pHashComputeTest, DISABLED_hashImage_multiple_messages) {
 	}
 
 	zmq::message_t response;
-	while(pull_socket->recv(&response, 1) != 0) {
-//		ASSERT_STREQ("World", (char*)response.data());
-		response.rebuild();
-		rcv_counter++;
+	while(rcv_counter < msg_count) {
+		if(pull_socket->recv(&response, 1)) {
+			response.rebuild();
+			rcv_counter++;
+		}
 	}
 
 	ASSERT_EQ(msg_count, rcv_counter);
