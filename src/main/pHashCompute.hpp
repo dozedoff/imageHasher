@@ -54,6 +54,7 @@ private:
 	void route_results();
 	std::string create_address(std::string ip, int port);
 	void thread_ready_wait(int num_of_threads);
+	void thread_send_ready(const std::string& who, zmq::socket_t& ready);
 };
 
 } /* namespace imageHasher */

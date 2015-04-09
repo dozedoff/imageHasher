@@ -80,6 +80,13 @@ void pHashCompute::thread_ready_wait(int num_of_threads) {
 	}
 }
 
+void pHashCompute::thread_send_ready(const std::string& who, zmq::socket_t& ready) {
+	int who_length = who.length() + 1;
+	zmq::message_t ready_msg(who_length);
+	memcpy(ready_msg.data(), (void*) (who.c_str()), who_length);
+	ready.send(ready_msg);
+}
+
 void pHashCompute::create_threads(int num_of_threads) {
 	LOG4CPLUS_INFO(logger, "Starting " << num_of_threads << " worker thread(s)");
 
@@ -116,12 +123,7 @@ void pHashCompute::process_requests(int worker_no) {
 
 	std::stringstream ss;
 	ss << "Worker " << worker_no;
-	std::string who = ss.str();
-	int who_length = who.length()+1;
-	zmq::message_t ready_msg(who_length);
-
-	memcpy(ready_msg.data(), (void*)who.c_str(), who_length);
-	ready.send(ready_msg);
+	thread_send_ready(ss.str(), ready);
 
 	try {
 
