@@ -13,7 +13,7 @@
  * Some more details about this file.
  */
 #include "pHashCompute.hpp"
-
+#include "commoncpp.hpp"
 #include <iostream>
 
 using namespace log4cplus;

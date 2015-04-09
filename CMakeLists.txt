@@ -17,6 +17,7 @@ file(GLOB ihcommonsrc src/main/*.cpp)
 include_directories(src/include)
 include_directories(/usr/include/GraphicsMagick/)
 include_directories(cppzmq)
+include_directories(commoncpp/src/include)
 
 # Find libraries
 find_library(gtest gtest)
