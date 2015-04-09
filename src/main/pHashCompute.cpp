@@ -75,8 +75,8 @@ void pHashCompute::thread_ready_wait(int num_of_threads) {
 	for (int response = 0; response < num_of_threads; response++) {
 		zmq::message_t ready_msg;
 		this->worker_ready->recv(&ready_msg);
-		int worker_no = *((int*) ready_msg.data()); // TODO this is unsafe and will explode with worker numbers > 255
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " is ready");
+		std::string msg((const char*)ready_msg.data());
+		LOG4CPLUS_DEBUG(logger, msg << " is ready");
 	}
 }
 
@@ -114,8 +114,13 @@ void pHashCompute::process_requests(int worker_no) {
 
 	}
 
-	zmq::message_t ready_msg(1);
-	memset(ready_msg.data(), worker_no, 1);
+	std::stringstream ss;
+	ss << "Worker " << worker_no;
+	std::string who = ss.str();
+	int who_length = who.length()+1;
+	zmq::message_t ready_msg(who_length);
+
+	memcpy(ready_msg.data(), (void*)who.c_str(), who_length);
 	ready.send(ready_msg);
 
 	try {
