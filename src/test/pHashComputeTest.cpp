@@ -104,3 +104,57 @@ TEST_F(pHashComputeTest, hashImage_response_content) {
 
 	ASSERT_STREQ("World", (char*)response.data());
 }
+
+TEST_F(pHashComputeTest, hashImage_2_requests) {
+	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
+	Magick::Blob blob;
+	img.write(&blob);
+
+	zmq::message_t request(blob.length());
+	memcpy(request.data(),blob.data(),blob.length());
+
+	zmq::message_t req2;
+	req2.copy(&request);
+
+	push_socket->send(request);
+
+	zmq::message_t response;
+	pull_socket->recv(&response);
+
+	ASSERT_STREQ("World", (char*)response.data());
+
+	push_socket->send(req2);
+
+	response.rebuild();
+	pull_socket->recv(&response);
+
+	ASSERT_STREQ("World", (char*)response.data());
+}
+
+TEST_F(pHashComputeTest, DISABLED_hashImage_multiple_messages) {
+	Magick::Image img ("commoncpp/src/test/hash/testImage.jpg");
+	Magick::Blob blob;
+	img.write(&blob);
+
+	zmq::message_t request(blob.length());
+	memcpy(request.data(),blob.data(),blob.length());
+
+	int msg_count = 10;
+	int send_counter = 0;
+	int rcv_counter = 0;
+
+	for(send_counter = 0; send_counter < msg_count; send_counter++) {
+		zmq::message_t to_send;
+		to_send.copy(&request);
+		push_socket->send(to_send);
+	}
+
+	zmq::message_t response;
+	while(pull_socket->recv(&response, 1) != 0) {
+//		ASSERT_STREQ("World", (char*)response.data());
+		response.rebuild();
+		rcv_counter++;
+	}
+
+	ASSERT_EQ(msg_count, rcv_counter);
+}
