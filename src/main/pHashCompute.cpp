@@ -25,6 +25,10 @@ const std::string pHashCompute::worker_pull_socket = "inproc://workerresults";
 const std::string pHashCompute::worker_ready_socket = "inproc://workerready";
 
 pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers) {
+	if(workers < 1) {
+                throw std::runtime_error("Number of threads must be 1 or greater");
+        }
+
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
 	setup_sockets (server_ip,remote_push_port, remote_pull_port);

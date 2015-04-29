@@ -120,3 +120,13 @@ TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 
 	ASSERT_EQ(msg_count, rcv_counter);
 }
+
+TEST_F(pHashComputeTest, negative_thread_parameter) {
+	delete(phc);
+	EXPECT_THROW({phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1);}, std::runtime_error);
+}
+
+TEST_F(pHashComputeTest, zero_thread_parameter) {
+	delete(phc);
+	EXPECT_THROW({phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1);}, std::runtime_error);
+}
