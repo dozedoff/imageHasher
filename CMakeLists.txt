@@ -52,6 +52,9 @@ target_link_libraries(imageHasher ihcommon commoncpp)
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
 
+# Copy resources
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/logs.properties ./logs.properties COPYONLY)
+
 # Only build tests if GTest is installed and option is selected
 if(GTEST_FOUND AND BUILD_TESTS)
 	add_executable (imagehasher_test ${tests})
