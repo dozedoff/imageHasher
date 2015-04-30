@@ -42,7 +42,16 @@ protected:
 		delete(pull_socket);
 		delete(context);
 	}
+
+	void send_message(const void* data, int data_length);
 };
+
+void pHashComputeTest::send_message(const void* data, int data_length) {
+	zmq::message_t request(data_length);
+	memcpy(request.data(),data, data_length);
+
+	push_socket->send(request);
+}
 
 TEST_F(pHashComputeTest, construction) {
 	ASSERT_TRUE(phc.get() != NULL);
@@ -61,11 +70,7 @@ TEST_F(pHashComputeTest, hashImage_response_length) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
-
-	memcpy(request.data(),blob.data(),blob.length());
-
-	push_socket->send(request);
+	this->send_message(blob.data(),blob.length());
 
 	zmq::message_t response;
 	pull_socket->recv(&response);
@@ -78,11 +83,7 @@ TEST_F(pHashComputeTest, hashImage_response_content) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
-
-	memcpy(request.data(),blob.data(),blob.length());
-
-	push_socket->send(request);
+	this->send_message(blob.data(),blob.length());
 
 	zmq::message_t response;
 	pull_socket->recv(&response);
@@ -127,3 +128,5 @@ TEST_F(pHashComputeTest, negative_thread_parameter) {
 TEST_F(pHashComputeTest, zero_thread_parameter) {
 	EXPECT_THROW({phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1));}, std::runtime_error);
 }
+
+
