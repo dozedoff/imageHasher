@@ -43,14 +43,18 @@ protected:
 		delete(context);
 	}
 
-	void send_message(const void* data, int data_length);
+	void send_message(unsigned int job_id, const void* data, int data_length);
 };
 
-void pHashComputeTest::send_message(const void* data, int data_length) {
+void pHashComputeTest::send_message(unsigned int job_id, const void* data, int data_length) {
+	zmq::message_t id(sizeof(unsigned int));
 	zmq::message_t request(data_length);
+
+	memcpy(id.data(), &job_id, sizeof(unsigned int));
 	memcpy(request.data(),data, data_length);
 
-	push_socket->send(request);
+	push_socket->send(id, ZMQ_SNDMORE);
+	push_socket->send(request, 0);
 }
 
 TEST_F(pHashComputeTest, construction) {
@@ -70,11 +74,15 @@ TEST_F(pHashComputeTest, hashImage_response_length) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	this->send_message(blob.data(),blob.length());
+	this->send_message(0, blob.data(),blob.length());
 
+	zmq::message_t id;
 	zmq::message_t response;
+
+	pull_socket->recv(&id);
 	pull_socket->recv(&response);
 
+	EXPECT_EQ(sizeof(unsigned int), id.size());
 	ASSERT_EQ(sizeof(int64_t), response.size());
 }
 
@@ -83,12 +91,21 @@ TEST_F(pHashComputeTest, hashImage_response_content) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	this->send_message(blob.data(),blob.length());
+	this->send_message(42, blob.data(),blob.length());
 
+	zmq::message_t id;
 	zmq::message_t response;
+
+	pull_socket->recv(&id);
 	pull_socket->recv(&response);
+
 	long pHash = 0;
+	unsigned int job_id = 0;
+
+	memcpy(&job_id, id.data(), sizeof(unsigned int));
 	memcpy(&pHash, response.data(), sizeof(long));
+
+	EXPECT_EQ(42U, job_id);
 	ASSERT_EQ(4092185452341198848, pHash);
 }
 
@@ -97,17 +114,12 @@ TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
-	memcpy(request.data(),blob.data(),blob.length());
-
-	int msg_count = 10;
+	int msg_count = 10 * 2; // * 2 because of id + payload, two separate messages
 	int send_counter = 0;
 	int rcv_counter = 0;
 
 	for(send_counter = 0; send_counter < msg_count; send_counter++) {
-		zmq::message_t to_send;
-		to_send.copy(&request);
-		push_socket->send(to_send);
+		this->send_message(send_counter, blob.data(), blob.length());
 	}
 
 	zmq::message_t response;
