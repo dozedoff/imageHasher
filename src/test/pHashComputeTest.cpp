@@ -14,7 +14,7 @@
 
 class pHashComputeTest : public :: testing::Test {
 protected:
-	imageHasher::pHashCompute *phc;
+	std::auto_ptr<imageHasher::pHashCompute> phc;
 
 	zmq::context_t *context;
 	zmq::socket_t *pull_socket, *push_socket;
@@ -29,8 +29,7 @@ protected:
 		push_socket = new zmq::socket_t(*context, ZMQ_PUSH);
 		push_socket->bind("tcp://*:4444");
 
-		phc = NULL;
-		phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,4);
+		phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4));
 	}
 
 	~pHashComputeTest() {
@@ -38,15 +37,28 @@ protected:
 		pull_socket->close();
 		context->close();
 
-		delete(phc);
+		phc.reset();
 		delete(push_socket);
 		delete(pull_socket);
 		delete(context);
 	}
+
+	void send_message(unsigned int job_id, const void* data, int data_length);
 };
 
+void pHashComputeTest::send_message(unsigned int job_id, const void* data, int data_length) {
+	zmq::message_t id(sizeof(unsigned int));
+	zmq::message_t request(data_length);
+
+	memcpy(id.data(), &job_id, sizeof(unsigned int));
+	memcpy(request.data(),data, data_length);
+
+	push_socket->send(id, ZMQ_SNDMORE);
+	push_socket->send(request, 0);
+}
+
 TEST_F(pHashComputeTest, construction) {
-	ASSERT_TRUE(phc != NULL);
+	ASSERT_TRUE(phc.get() != NULL);
 }
 
 TEST_F(pHashComputeTest, push_socket_connected) {
@@ -62,15 +74,15 @@ TEST_F(pHashComputeTest, hashImage_response_length) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
+	this->send_message(0, blob.data(),blob.length());
 
-	memcpy(request.data(),blob.data(),blob.length());
-
-	push_socket->send(request);
-
+	zmq::message_t id;
 	zmq::message_t response;
+
+	pull_socket->recv(&id);
 	pull_socket->recv(&response);
 
+	EXPECT_EQ(sizeof(unsigned int), id.size());
 	ASSERT_EQ(sizeof(int64_t), response.size());
 }
 
@@ -79,16 +91,21 @@ TEST_F(pHashComputeTest, hashImage_response_content) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
+	this->send_message(42, blob.data(),blob.length());
 
-	memcpy(request.data(),blob.data(),blob.length());
-
-	push_socket->send(request);
-
+	zmq::message_t id;
 	zmq::message_t response;
+
+	pull_socket->recv(&id);
 	pull_socket->recv(&response);
+
 	long pHash = 0;
+	unsigned int job_id = 0;
+
+	memcpy(&job_id, id.data(), sizeof(unsigned int));
 	memcpy(&pHash, response.data(), sizeof(long));
+
+	EXPECT_EQ(42U, job_id);
 	ASSERT_EQ(4092185452341198848, pHash);
 }
 
@@ -97,17 +114,12 @@ TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 	Magick::Blob blob;
 	img.write(&blob);
 
-	zmq::message_t request(blob.length());
-	memcpy(request.data(),blob.data(),blob.length());
-
-	int msg_count = 10;
+	int msg_count = 10 * 2; // * 2 because of id + payload, two separate messages
 	int send_counter = 0;
 	int rcv_counter = 0;
 
 	for(send_counter = 0; send_counter < msg_count; send_counter++) {
-		zmq::message_t to_send;
-		to_send.copy(&request);
-		push_socket->send(to_send);
+		this->send_message(send_counter, blob.data(), blob.length());
 	}
 
 	zmq::message_t response;
@@ -120,3 +132,13 @@ TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 
 	ASSERT_EQ(msg_count, rcv_counter);
 }
+
+TEST_F(pHashComputeTest, negative_thread_parameter) {
+	EXPECT_THROW({phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1));}, std::runtime_error);
+}
+
+TEST_F(pHashComputeTest, zero_thread_parameter) {
+	EXPECT_THROW({phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1));}, std::runtime_error);
+}
+
+

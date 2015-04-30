@@ -42,6 +42,7 @@ add_library(ihcommon SHARED ${ihcommonsrc})
 # Executables to build
 add_executable(imageHasher src/ImageHasher.cpp)
 add_executable(hashUtil src/HashUtil.cpp)
+add_executable(computeClient src/pHashComputeClient.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite})
@@ -49,6 +50,10 @@ target_link_libraries(ihcommon commoncpp odbtable zmq ${log4cplus} ${Boost_LIBRA
 
 target_link_libraries(imageHasher ihcommon commoncpp)
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
+target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
+
+# Copy resources
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/logs.properties ./logs.properties COPYONLY)
 
 # Only build tests if GTest is installed and option is selected
 if(GTEST_FOUND AND BUILD_TESTS)

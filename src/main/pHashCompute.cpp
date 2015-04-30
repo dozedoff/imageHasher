@@ -25,6 +25,10 @@ const std::string pHashCompute::worker_pull_socket = "inproc://workerresults";
 const std::string pHashCompute::worker_ready_socket = "inproc://workerready";
 
 pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers) {
+	if(workers < 1) {
+                throw std::runtime_error("Number of threads must be 1 or greater");
+        }
+
 	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
 	setup_sockets (server_ip,remote_push_port, remote_pull_port);
@@ -131,17 +135,31 @@ void pHashCompute::process_requests(int worker_no) {
 	try {
 
 	while(!boost::this_thread::interruption_requested()) {
+		zmq::message_t id;
 		zmq::message_t request;
+		unsigned int job_id = 0;
+
+		tasks.recv (&id);
+
+		if(! id.more()) {
+			LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " request was not a multi-part message ");
+			continue;
+		}
+
+		memcpy(&job_id, id.data(), sizeof(unsigned int));
 		tasks.recv (&request);
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " got a request with size " << request.size());
+
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " got a request with id " << job_id << " and size " << request.size());
 		Magick::Blob blob(request.data(),request.size());
 		long pHash = iph.getLongHash(blob);
 
 		// Send reply back to client
 		zmq::message_t reply (sizeof(long));
 		memcpy ((void *) reply.data (), &pHash, sizeof(long));
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sending response with size "  << reply.size());
-		results.send (reply);
+		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sending response for job " << job_id << " with size "  << reply.size());
+
+		results.send(id, ZMQ_SNDMORE);
+		results.send (reply, 0);
 	}
 
 	} catch (zmq::error_t const &e) {
