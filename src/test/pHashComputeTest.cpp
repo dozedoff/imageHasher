@@ -14,7 +14,7 @@
 
 class pHashComputeTest : public :: testing::Test {
 protected:
-	imageHasher::pHashCompute *phc;
+	std::auto_ptr<imageHasher::pHashCompute> phc;
 
 	zmq::context_t *context;
 	zmq::socket_t *pull_socket, *push_socket;
@@ -29,8 +29,7 @@ protected:
 		push_socket = new zmq::socket_t(*context, ZMQ_PUSH);
 		push_socket->bind("tcp://*:4444");
 
-		phc = NULL;
-		phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,4);
+		phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4));
 	}
 
 	~pHashComputeTest() {
@@ -38,7 +37,7 @@ protected:
 		pull_socket->close();
 		context->close();
 
-		delete(phc);
+		phc.reset();
 		delete(push_socket);
 		delete(pull_socket);
 		delete(context);
@@ -46,7 +45,7 @@ protected:
 };
 
 TEST_F(pHashComputeTest, construction) {
-	ASSERT_TRUE(phc != NULL);
+	ASSERT_TRUE(phc.get() != NULL);
 }
 
 TEST_F(pHashComputeTest, push_socket_connected) {
@@ -122,11 +121,9 @@ TEST_F(pHashComputeTest, hashImage_multiple_messages) {
 }
 
 TEST_F(pHashComputeTest, negative_thread_parameter) {
-	delete(phc);
-	EXPECT_THROW({phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1);}, std::runtime_error);
+	EXPECT_THROW({phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1));}, std::runtime_error);
 }
 
 TEST_F(pHashComputeTest, zero_thread_parameter) {
-	delete(phc);
-	EXPECT_THROW({phc = new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1);}, std::runtime_error);
+	EXPECT_THROW({phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,-1));}, std::runtime_error);
 }
