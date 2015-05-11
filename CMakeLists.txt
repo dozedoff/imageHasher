@@ -22,12 +22,15 @@ file(GLOB ihcommonsrc src/main/*.cpp)
 # Include additional header files
 include_directories(src/include)
 include_directories(/usr/include/GraphicsMagick/)
+include_directories(cppzmq)
+include_directories(commoncpp/src/include)
 
 # Find libraries
 find_library(gtest gtest)
 find_library(log4cplus log4cplus)
 find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
+find_library(zmq zmq)
 
 ## Find packages
 
@@ -45,13 +48,18 @@ add_library(ihcommon SHARED ${ihcommonsrc})
 # Executables to build
 add_executable(imageHasher src/ImageHasher.cpp)
 add_executable(hashUtil src/HashUtil.cpp)
+add_executable(computeClient src/pHashComputeClient.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite})
-target_link_libraries(ihcommon commoncpp odbtable ${log4cplus} ${Boost_LIBRARIES})
+target_link_libraries(ihcommon commoncpp odbtable zmq ${log4cplus} ${Boost_LIBRARIES})
 
 target_link_libraries(imageHasher ihcommon commoncpp)
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
+target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
+
+# Copy resources
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/logs.properties ./logs.properties COPYONLY)
 
 # Only build tests if GTest is installed and option is selected
 if(GTEST_FOUND AND BUILD_TESTS)
@@ -59,6 +67,7 @@ if(GTEST_FOUND AND BUILD_TESTS)
 	target_link_libraries(imagehasher_test ihcommon ${GTEST_LIBRARIES})
 
 	enable_testing()
+	add_test(NAME imagehasher_test COMMAND imagehasher_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_custom_command(TARGET imagehasher_test POST_BUILD COMMAND ctest -V -R imagehasher_test)
 elseif(GTEST_FOUND)
 	message("Skipping tests...")
