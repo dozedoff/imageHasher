@@ -66,6 +66,9 @@ if(GTEST_FOUND AND BUILD_TESTS)
 	add_executable (imagehasher_test ${tests})
 	target_link_libraries(imagehasher_test ihcommon ${GTEST_LIBRARIES})
 
+	# copy test files to build directory
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/commoncpp DESTINATION ${CMAKE_BINARY_DIR})
+
 	enable_testing()
 	add_test(NAME imagehasher_test COMMAND imagehasher_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_custom_command(TARGET imagehasher_test POST_BUILD COMMAND ctest -V -R imagehasher_test)
@@ -76,7 +79,7 @@ else()
 endif()
 
 # Ignore in coverage report
-set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' '*-odb.*')
+set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' 'cppzmq/*' '*-odb.*')
 
 # Coverage target
 setup_target_for_coverage(
