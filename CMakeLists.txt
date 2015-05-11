@@ -1,8 +1,14 @@
 cmake_minimum_required(VERSION 2.8)
 project(imageHasher)
 
+# Add additional cmake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 # Options
 option (BUILD_TESTS "Build and run unit tests" ON)
+
+# Use code coverage
+include(CodeCoverage)
 
 # Add depdency project
 add_subdirectory(commoncpp)
@@ -59,3 +65,13 @@ elseif(GTEST_FOUND)
 else()
 	message(WARNING "GTest library not found, skipping tests.")
 endif()
+
+# Ignore in coverage report
+set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' '*-odb.*')
+
+# Coverage target
+setup_target_for_coverage(
+        cov             	# Name for custom target.
+        imagehasher_test        # Name of the test driver executable that runs the tests.
+        coverage        	# Name of output directory.
+)
