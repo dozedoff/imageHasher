@@ -35,7 +35,7 @@ find_library(zmq zmq)
 ## Find packages
 
 # Add required boost libraries
-find_package(Boost 1.36.0 COMPONENTS filesystem system thread chrono program_options REQUIRED)
+find_package(Boost 1.36.0 COMPONENTS log filesystem system thread chrono program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Add GTest library
