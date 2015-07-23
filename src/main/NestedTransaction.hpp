@@ -32,7 +32,7 @@ class NestedTransaction {
 	private:
 
 	bool active_transaction;
-	std::auto_ptr<odb::transaction> transaction;
+	std::unique_ptr<odb::transaction> transaction;
 };
 
 } /* namespace db */

@@ -35,6 +35,9 @@
 #define hash_sha_query "hash-sha-query"
 #define hash_phash_query "hash-phash-query"
 
+// Enable C++11 for ODB
+#define ODB_CXX11
+
 using namespace imageHasher::db::table;
 
 namespace imageHasher {
@@ -76,37 +79,37 @@ odb::prepared_query<imageHasher::db::table::Hash> PreparedQuery::get_hash_query(
 void PreparedQuery::imageRecord_query_factory(const char* query_name, odb::connection& connection) {
 	typedef odb::query<ImageRecord> query;
 
-	std::auto_ptr<std::string> p (new std::string);
+	std::unique_ptr<std::string> p (new std::string);
 	query q (query::path == query::_ref (*p));
 	odb::prepared_query<ImageRecord> pq (connection.prepare_query<ImageRecord> (query_name, q));
-	connection.cache_query (pq, p);
+	connection.cache_query (pq, std::move(p));
 }
 
 void PreparedQuery::path_query_factory(const char* query_name, odb::connection& connection) {
 	typedef odb::query<ImageRecord> query;
 
-	std::auto_ptr<std::string> p(new std::string);
+	std::unique_ptr<std::string> p(new std::string);
 	query q(query::path.like(query::_ref(*p)));
 	odb::prepared_query<ImageRecord> pq(connection.prepare_query<ImageRecord>(query_name, q));
-	connection.cache_query(pq, p);
+	connection.cache_query(pq, std::move(p));
 }
 
 void PreparedQuery::hash_sha_query_factory(const char* query_name, odb::connection& connection) {
 	typedef odb::query<Hash> query;
 
-	std::auto_ptr<std::string> p(new std::string);
+	std::unique_ptr<std::string> p(new std::string);
 	query q(query::sha256 == query::_ref(*p));
 	odb::prepared_query<Hash> pq(connection.prepare_query<Hash>(query_name, q));
-	connection.cache_query(pq, p);
+	connection.cache_query(pq, std::move(p));
 }
 
 void PreparedQuery::hash_phash_query_factory(const char* query_name, odb::connection& connection) {
 	typedef odb::query<Hash> query;
 
-	std::auto_ptr<uint64_t> p(new uint64_t);
+	std::unique_ptr<uint64_t> p(new uint64_t);
 	query q(query::pHash == query::_ref(*p));
 	odb::prepared_query<Hash> pq(connection.prepare_query<Hash>(query_name, q));
-	connection.cache_query(pq, p);
+	connection.cache_query(pq, std::move(p));
 }
 
 } /* namespace db */

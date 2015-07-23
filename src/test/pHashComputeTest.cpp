@@ -14,7 +14,7 @@
 
 class pHashComputeTest : public :: testing::Test {
 protected:
-	std::auto_ptr<imageHasher::pHashCompute> phc;
+	std::unique_ptr<imageHasher::pHashCompute> phc;
 
 	zmq::context_t *context;
 	zmq::socket_t *pull_socket, *push_socket;
