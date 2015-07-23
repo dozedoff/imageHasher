@@ -21,8 +21,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/chrono.hpp>
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 #include "../main/table/Hash.hpp"
 #include "../main/table/Hash-odb.hxx"
@@ -82,7 +82,7 @@ private:
 	std::list<db_data>* currentList;
 	boost::mutex flipMutex, dbMutex;
 	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertShaRecordQueryStmt, *insertpHashRecordQueryStmt, *getPhashQueryStmt, *getpHashidQuery;
-	log4cplus::Logger logger;
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	unsigned int recordsWritten;
 	unsigned int sha_found;
 	unsigned int invalid_files;

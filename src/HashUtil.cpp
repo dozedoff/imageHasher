@@ -12,23 +12,22 @@
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 #include <iostream>
+#include <iomanip>
 
 #include "include/ImageFinder.hpp"
 #include "include/Database.hpp"
 #include "../commoncpp/src/include/commoncpp.hpp"
 #include "../commoncpp/src/include/hash/SHA.hpp"
 
-
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
 using namespace std;
-using namespace log4cplus;
+using namespace boost::log::trivial;
 
 class HashUtil {
 public:
@@ -41,7 +40,7 @@ private:
 	ImagePHash* iph;
 	SHA *sha;
 
-	Logger logger;
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 
 	bool isValidPath(string);
 	void filter(path, string);
@@ -63,10 +62,6 @@ HashUtil::~HashUtil() {
 }
 
 HashUtil::HashUtil(){
-	PropertyConfigurator config("logs.properties");
-	config.configure();
-	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashUtil"));
-
 	imageFinder = new ImageFinder();
 	db = new Database();
 	iph = new ImagePHash();
@@ -74,7 +69,7 @@ HashUtil::HashUtil(){
 }
 
 int HashUtil::run(int argc, char* argv[]) {
-	LOG4CPLUS_INFO(logger, "HashUtil init...");
+	BOOST_LOG_SEV(logger,info)<<"HashUtil init...";
 	po::options_description desc = po::options_description("Allowed options");
 	po::options_description hidden("Hidden options");
 	po::options_description allOptions;
@@ -134,8 +129,7 @@ int HashUtil::run(int argc, char* argv[]) {
 	//TODO add user confirmation here
 	for (vector<string>::iterator ite = paths.begin(); ite != paths.end(); ++ite) {
 		fs::path path(*ite);
-		LOG4CPLUS_INFO(logger, "Processing directory " << path);
-
+		BOOST_LOG_SEV(logger,info)<<"Processing directory " << path;
 		if (vm.count("prune") > 0) {
 			prune(path);
 		}
@@ -155,7 +149,7 @@ bool HashUtil::isValidPath(string path) {
 
 void HashUtil::filter(path directory, string reason){
 	list<fs::path> images = imageFinder->getImages(directory);
-	LOG4CPLUS_INFO(logger, "Filtering " << images.size() << " image(s) for " << directory);
+	BOOST_LOG_SEV(logger,info)<< images.size() << " image(s) for " << directory;
 
 	for(list<fs::path>::iterator ite = images.begin(); ite != images.end(); ++ite) {
 		int64_t pHash = iph->getLongHash(ite->string());
@@ -176,7 +170,7 @@ void HashUtil::prune(fs::path directory) {
 	int pruneCount = 0;
 
 	for(list<path>::iterator ite = files.begin(); ite != files.end(); ++ite) {
-		LOG4CPLUS_DEBUG(logger, "Checking if " << *ite << " exists");
+		BOOST_LOG_SEV(logger,debug)<< "Checking if " << *ite << " exists";
 
 		if(fs::exists(*ite)) {
 			ite = files.erase(ite);
@@ -185,7 +179,7 @@ void HashUtil::prune(fs::path directory) {
 		}
 	}
 
-	LOG4CPLUS_INFO(logger, "Found " << pruneCount << " files that no longe exist");
+	BOOST_LOG_SEV(logger,info)<< "Found " << pruneCount << " files that no longer exist";
 	db->prunePath(files);
-	LOG4CPLUS_INFO(logger, "Pruned " << pruneCount << " of " << files.size() << " entries");
+	BOOST_LOG_SEV(logger,info)<< "Pruned " << pruneCount << " of " << files.size() << " entries";
 }

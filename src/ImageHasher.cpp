@@ -10,9 +10,8 @@
  *      Author: nicholas
  */
 
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
-#include <log4cplus/configurator.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -27,10 +26,12 @@
 #include "include/HashWorker.hpp"
 #include "../commoncpp/src/include/hash/ImagePHash.hpp"
 
-using namespace log4cplus;
+using namespace boost::log::trivial;
 using namespace boost::filesystem;
 
-Logger logger;
+//TODO Convert to C++ class (see HashUtil.cpp)
+
+
 
 // Prototypes
 path getPath(char**);
@@ -38,13 +39,10 @@ void signalHandler(int);
 HashWorker *hw;
 
 int main(int argc, char* argv[]) {
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	ImageFinder imgF;
 	ImagePHash iph(32,9);
 	long imageCount = 0;
-
-	PropertyConfigurator config("logs.properties");
-	config.configure();
-	logger = Logger::getInstance(LOG4CPLUS_TEXT("ImageHasher"));
 
 	signal(SIGINT, signalHandler);
 
@@ -52,28 +50,29 @@ int main(int argc, char* argv[]) {
 	std::list<path> imagePaths = imgF.getImages(searchPath);
 
 	imageCount = imagePaths.size();
-	LOG4CPLUS_INFO(logger, "Found " << imageCount << " images in " << searchPath);
+	BOOST_LOG_SEV(logger,info) << "Found " << imageCount << " images in " << searchPath;
 
 	hw = new HashWorker(&imagePaths,4);
-	LOG4CPLUS_INFO(logger, "Starting hashing of images...");
+	BOOST_LOG_SEV(logger,info) << "Starting hashing of images...";
 	hw->start();
 }
 
 path getPath(char* argv[]) {
 	path path;
-
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	if (NULL == argv[1]) {
 		path = boost::filesystem::current_path();
-		LOG4CPLUS_INFO(logger, "No search path given, using current directory " << path);
+		BOOST_LOG_SEV(logger,info) << "No search path given, using current directory " << path;
 	} else {
 		path = boost::filesystem::path(argv[1]);
-		LOG4CPLUS_INFO(logger, "Search path is " << path);
+		BOOST_LOG_SEV(logger,info) << "Search path is " << path;
 	}
 
 	return path;
 }
 
 void signalHandler(int signal) {
-	LOG4CPLUS_INFO(logger, "Program interrupted, Shutting down");
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
+	BOOST_LOG_SEV(logger,info) << "Program interrupted, Shutting down";
 	hw->clear();
 }

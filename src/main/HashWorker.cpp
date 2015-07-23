@@ -19,6 +19,7 @@
 #include <GraphicsMagick/Magick++/Exception.h>
 
 using std::list;
+using namespace boost::log::trivial;
 
 HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorkers(numOfWorkers), imagePaths(*imagePaths) {
 	running = true;
@@ -28,7 +29,6 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 		throw "Number of  workers must be greater than 0";
 	}
 
-	logger = Logger::getInstance(LOG4CPLUS_TEXT("HashWorker"));
 	totalNumOfFiles = imagePaths->size();
 	skipped_files = 0;
 }
@@ -36,18 +36,18 @@ HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorke
 void HashWorker::start() {
 	boost::thread_group tg;
 
-	LOG4CPLUS_INFO(logger, "Starting " << numOfWorkers << " worker thread(s)");
+	BOOST_LOG_SEV(logger,info)<<"Starting " << numOfWorkers << " worker thread(s)";
 
 	for(int i = 0; i < numOfWorkers; i++) {
 		boost::thread *t = new boost::thread(&HashWorker::doWork, this, i);
 		tg.add_thread(t);
-		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
+		BOOST_LOG_SEV(logger,info)<<"Worker thread " << i << " started";
 	}
 
 	tg.join_all();
 	db.shutdown();
-	LOG4CPLUS_INFO(logger, "All worker thread(s) have terminated");
-	LOG4CPLUS_INFO(logger, "Hashed " << db.getRecordsWritten() << " of " << totalNumOfFiles << " images, sha lookup hits:"<< db.get_sha_found() << ", skipped " << skipped_files << ", invalid: " << db.get_invalid_files());
+	BOOST_LOG_SEV(logger,info)<<"All worker thread(s) have terminated";
+	BOOST_LOG_SEV(logger,info)<<"Hashed " << db.getRecordsWritten() << " of " << totalNumOfFiles << " images, sha lookup hits:"<< db.get_sha_found() << ", skipped " << skipped_files << ", invalid: " << db.get_invalid_files();
 }
 
 void HashWorker::clear() {
@@ -82,7 +82,7 @@ void HashWorker::doWork(int workerNum) {
 		path image = getWork();
 
 		if (image.empty() || !boost::filesystem::exists(image)) {
-			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Path empty or invalid, skipping... " << image);
+			BOOST_LOG_SEV(logger,debug)<<"HashWorker " << workerNum << ": " << "Path empty or invalid, skipping... " << image;
 			local_skipped_files++;
 			continue;
 		}
@@ -92,7 +92,7 @@ void HashWorker::doWork(int workerNum) {
 			data = Database::db_data(image);
 
 			if (db.entryExists(data)) {
-				LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << "Found " << image << " skipping...");
+				BOOST_LOG_SEV(logger,debug)<<"HashWorker " << workerNum << ": " << "Found " << image << " skipping...";
 				local_skipped_files++;
 				continue;
 			}
@@ -109,10 +109,10 @@ void HashWorker::doWork(int workerNum) {
 			data.pHash = pHash;
 			data.sha256 = sha256;
 			data.status = Database::OK;
-			LOG4CPLUS_DEBUG(logger, "HashWorker " << workerNum << ": " << pHash << " - " << image);
+			BOOST_LOG_SEV(logger,debug)<<"HashWorker " << workerNum << ": " << pHash << " - " << image;
 			db.add(data);
 		} catch (Magick::Exception &e) {
-			LOG4CPLUS_WARN(logger, "HashWorker " << workerNum << ": " << "Failed to process image " << filepath << " : " << e.what());
+			BOOST_LOG_SEV(logger,warning)<<"HashWorker " << workerNum << ": " << "Failed to process image " << filepath << " : " << e.what();
 			data.status = Database::INVALID;
 			db.add(data);
 		}
@@ -121,5 +121,5 @@ void HashWorker::doWork(int workerNum) {
 	boost::mutex::scoped_lock lock(stats_mutex);
 	skipped_files += local_skipped_files;
 
-	LOG4CPLUS_INFO(logger, "HashWorker " << workerNum << ": " << "No more work, worker thread shutting down");
+	BOOST_LOG_SEV(logger,info)<<"HashWorker " << workerNum << ": " << "No more work, worker thread shutting down";
 }

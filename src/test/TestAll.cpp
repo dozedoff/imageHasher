@@ -12,8 +12,6 @@ using namespace log4cplus;
 using namespace std;
 
 int main(int argc, char* argv[]) {
-	 BasicConfigurator config;
-	 config.configure();
 ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

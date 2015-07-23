@@ -26,6 +26,9 @@
 #include "table/FilterRecord.hpp"
 #include "table/FilterRecord-odb.hxx"
 
+#include <iostream>
+#include <iomanip>
+
 const char *dbName = "imageHasher.db";
 
 const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
@@ -33,6 +36,7 @@ const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT 
 using namespace odb;
 using namespace imageHasher::db::table;
 using imageHasher::db::NestedTransaction;
+using namespace boost::log::trivial;
 
 Database::Database(const char* dbPath) {
 	dbName = dbPath;
@@ -52,7 +56,7 @@ Database::~Database() {
 int Database::flush() {
 	int drainCount = 0;
 
-	LOG4CPLUS_INFO(logger, "Flushing lists...");
+	BOOST_LOG_SEV(logger,info) << "Flushing lists...";
 
 	drainCount = drain();
 	drainCount += drain();
@@ -62,13 +66,13 @@ int Database::flush() {
 
 void Database::shutdown() {
 	if (running) {
-		LOG4CPLUS_INFO(logger, "Shutting down...");
+		BOOST_LOG_SEV(logger,info) << "Shutting down...";
 		running = false;
-		LOG4CPLUS_INFO(logger, "Waiting for db worker to finish...");
+		BOOST_LOG_SEV(logger,info) << "Waiting for db worker to finish...";
 		workerThread->interrupt();
 		workerThread->join();
 		delete(workerThread);
-		LOG4CPLUS_INFO(logger, "Closing database...");
+		BOOST_LOG_SEV(logger,info) << "Closing database...";
 	}
 }
 
@@ -83,7 +87,6 @@ void Database::init() {
 	this->invalid_files = 0;
 	this->sha_found = 0;
 	this->running = true;
-	logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("Database"));
 
 	setupDatabase();
 	prepareStatements();
@@ -114,7 +117,7 @@ void Database::initialise_db() {
 void Database::setupDatabase() {
 	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 
-	LOG4CPLUS_INFO(logger, "Setting up database " << dbName);
+	BOOST_LOG_SEV(logger,info) << "Setting up database " << dbName;
 
 	bool init_done = is_db_initialised();
 
@@ -173,7 +176,7 @@ int Database::drain() {
 }
 
 bool Database::entryExists(fs::path filePath) {
-	LOG4CPLUS_DEBUG(logger, "Looking for file " << filePath);
+	BOOST_LOG_SEV(logger,debug) <<  "Looking for file " << filePath;
 
 	ImageRecord ir = get_imagerecord(filePath);
 
@@ -189,7 +192,7 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 	std::string path_query(directoryPath.string());
 	path_query += "%";
 
-	LOG4CPLUS_INFO(logger, "Looking for files with path " << directoryPath);
+	BOOST_LOG_SEV(logger,info) << "Looking for files with path " << directoryPath;
 
 	NestedTransaction t (orm_db->begin());
 	std::string *param;
@@ -206,12 +209,12 @@ std::list<fs::path> Database::getFilesWithPath(fs::path directoryPath) {
 
 	t.commit();
 
-	LOG4CPLUS_INFO(logger, "Found  " << filePaths.size() << " records for path " << directoryPath);
+	BOOST_LOG_SEV(logger,info) << "Found  " << filePaths.size() << " records for path " << directoryPath;
 	return filePaths;
 }
 
 void Database::prunePath(std::list<fs::path> filePaths) {
-	LOG4CPLUS_INFO(logger, "Pruning " << filePaths.size() << " path(s) from the database.");
+	BOOST_LOG_SEV(logger,info) << "Pruning " << filePaths.size() << " path(s) from the database.";
 
 	for(std::list<fs::path>::iterator ite = filePaths.begin(); ite != filePaths.end(); ++ite){
 		ImageRecord ir = get_imagerecord(*ite);
@@ -241,7 +244,7 @@ void Database::addToBatch(db_data data) {
 		break;
 
 	default:
-		LOG4CPLUS_ERROR(logger, "Unhandled state encountered");
+		BOOST_LOG_SEV(logger,error) <<  "Unhandled state encountered";
 		throw "Unhandled state encountered";
 		break;
 	}
@@ -249,7 +252,7 @@ void Database::addToBatch(db_data data) {
 
 void Database::add_record(db_data data) {
 	if(entryExists(data)) {
-		LOG4CPLUS_DEBUG(logger, "Entry for " << data.filePath << " already exists, discarding...");
+		BOOST_LOG_SEV(logger,debug) <<  "Entry for " << data.filePath << " already exists, discarding...";
 		recordsWritten--;
 		return;
 	}
@@ -270,7 +273,7 @@ void Database::add_record(db_data data) {
 
 	t.commit();
 	} catch (const odb::exception &e) {
-		LOG4CPLUS_ERROR(logger, "Failed to add ImageRecord for path " << data.filePath << " : " << e.what());
+		BOOST_LOG_SEV(logger,error) <<  "Failed to add ImageRecord for path " << data.filePath << " : " << e.what();
 	}
 }
 
@@ -287,7 +290,7 @@ int Database::add_path_placeholder(std::string path) {
 }
 
 void Database::add_invalid(db_data data) {
-	LOG4CPLUS_DEBUG(logger, "File with path " << data.filePath << " is invalid");
+	BOOST_LOG_SEV(logger,debug) <<  "File with path " << data.filePath << " is invalid";
 	recordsWritten--;
 	invalid_files++;
 	Hash hash = get_hash("");
@@ -299,7 +302,7 @@ void Database::add_invalid(db_data data) {
 }
 
 void Database::add_filter(db_data data) {
-	LOG4CPLUS_DEBUG(logger, "Adding filter record for pHash" << data.pHash << " with reason " << data.reason);
+	BOOST_LOG_SEV(logger,debug) <<  "Adding filter record for pHash" << data.pHash << " with reason " << data.reason;
 
 	imageHasher::db::table::FilterRecord fr(data.pHash, data.reason);
 
@@ -311,7 +314,7 @@ void Database::add_filter(db_data data) {
 }
 
 void Database::prepareStatements() {
-	LOG4CPLUS_INFO(logger, "Creating prepared statements...");
+	BOOST_LOG_SEV(logger,info) << "Creating prepared statements...";
 	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
 }
 
@@ -320,18 +323,18 @@ void Database::doWork() {
 		try{
 			boost::this_thread::sleep_for(boost::chrono::seconds(3));
 		}catch(boost::thread_interrupted&) {
-			LOG4CPLUS_INFO(logger,"DB thread interrupted");
+			BOOST_LOG_SEV(logger,info) <<"DB thread interrupted";
 		}
 
 		if(currentList->size() > 1000) {
 			int drainCount = drain();
-			LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
+			BOOST_LOG_SEV(logger,info) << drainCount << " records processed, Total: " << recordsWritten;
 		}
 	}
 
 	// make sure both lists are committed
 	int drainCount = flush();
-	LOG4CPLUS_INFO(logger, drainCount << " records processed, Total: " << recordsWritten);
+	BOOST_LOG_SEV(logger,info) << drainCount << " records processed, Total: " << recordsWritten;
 }
 
 unsigned int Database::getRecordsWritten() {
@@ -348,7 +351,7 @@ unsigned int Database::get_invalid_files() {
 
 std::string Database::getSHA(fs::path filepath) {
 	std::string sha = "";
-	LOG4CPLUS_DEBUG(logger, "Getting SHA for path " << filepath);
+	BOOST_LOG_SEV(logger,debug) <<  "Getting SHA for path " << filepath;
 
 	ImageRecord ir = get_imagerecord(filepath);
 
@@ -366,7 +369,7 @@ bool Database::sha_exists(std::string sha) {
 }
 
 int64_t Database::getPhash(fs::path filepath) {
-	LOG4CPLUS_DEBUG(logger, "Getting pHash for path " << filepath);
+	BOOST_LOG_SEV(logger,debug) <<  "Getting pHash for path " << filepath;
 
 	ImageRecord ir = get_imagerecord(filepath);
 
@@ -379,7 +382,7 @@ int64_t Database::getPhash(fs::path filepath) {
 
 imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 	Hash hash;
-	LOG4CPLUS_DEBUG(logger, "Getting hash for sha " << sha);
+	BOOST_LOG_SEV(logger,debug) <<  "Getting hash for sha " << sha;
 
 	NestedTransaction t (orm_db->begin());
 
@@ -403,7 +406,7 @@ imageHasher::db::table::Hash Database::get_hash(std::string sha) {
 
 imageHasher::db::table::Hash Database::get_hash(u_int64_t phash) {
 	Hash hash;
-	LOG4CPLUS_DEBUG(logger, "Getting hash for pHash " << phash);
+	BOOST_LOG_SEV(logger,debug) <<  "Getting hash for pHash " << phash;
 
 	NestedTransaction t(orm_db->begin());
 
@@ -431,7 +434,7 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 
 		std::string *p;
 
-		LOG4CPLUS_DEBUG(logger, "Getting imagerecord for path " << filepath);
+		BOOST_LOG_SEV(logger,debug) <<  "Getting imagerecord for path " << filepath;
 		odb::prepared_query<ImageRecord> pq = this->prep_query->get_imagerecord_path_query(p);
 
 		*p = filepath.string();
@@ -445,7 +448,7 @@ imageHasher::db::table::ImageRecord Database::get_imagerecord(fs::path filepath)
 
 		t.commit();
 	} catch (odb::exception *e) {
-		LOG4CPLUS_ERROR(logger, "Failed to get ImageRecord for path " << filepath << " : " << e);
+		BOOST_LOG_SEV(logger,error) <<  "Failed to get ImageRecord for path " << filepath << " : " << e;
 	}
 
 	return ir;
@@ -465,14 +468,14 @@ int Database::prune_hash_table() {
 
 	NestedTransaction t (orm_db->begin());
 
-	LOG4CPLUS_INFO(logger, "Pruning hash table...");
+	BOOST_LOG_SEV(logger,info) << "Pruning hash table...";
 	unsigned long long query_result = orm_db->execute(prune_hash_table_query);
 
 	t.commit();
 
 	query_result -= 1;
 
-	LOG4CPLUS_INFO(logger, "Pruned " << query_result << " record(s) from the hash table.");
+	BOOST_LOG_SEV(logger,info) << "Pruned " << query_result << " record(s) from the hash table.";
 
 	return (int)query_result;
 }

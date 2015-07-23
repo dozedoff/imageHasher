@@ -17,8 +17,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/thread.hpp>
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 #include "../include/Database.hpp"
 
@@ -35,7 +35,7 @@ private:
 	std::list<path> imagePaths;
 	boost::mutex workQueueMutex;
 	boost::mutex stats_mutex;
-	log4cplus::Logger logger;
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	Database db;
 	bool running;
 	int totalNumOfFiles;

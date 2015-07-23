@@ -16,7 +16,7 @@
 #include "commoncpp.hpp"
 #include <iostream>
 
-using namespace log4cplus;
+using namespace boost::log::trivial;
 
 namespace imageHasher {
 const std::string pHashCompute::server_socket = "tcp://";
@@ -28,8 +28,6 @@ pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remo
 	if(workers < 1) {
                 throw std::runtime_error("Number of threads must be 1 or greater");
         }
-
-	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashCompute"));
 
 	setup_sockets (server_ip,remote_push_port, remote_pull_port);
 	create_threads(workers);
@@ -57,7 +55,7 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 	if(!this->client_pull->connected()) {
 		throw new std::runtime_error("Failed to connect to client pull port");
 	}
-	LOG4CPLUS_INFO(logger, "Connected to remote server " << pull_addr << " for pulling tasks");
+	BOOST_LOG_SEV(logger,info)<<"Connected to remote server " << pull_addr << " for pulling tasks";
 
 	this->client_push = new zmq::socket_t(*(this->context), ZMQ_PUSH);
 	this->client_push->connect(push_addr.c_str());
@@ -65,7 +63,7 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 	if(!this->client_push->connected()) {
 			throw new std::runtime_error("Failed to connect to client pull port");
 	}
-	LOG4CPLUS_INFO(logger, "Connected to remote server " << push_addr << " for pushing results");
+	BOOST_LOG_SEV(logger,info)<<"Connected to remote server " << push_addr << " for pushing results";
 }
 
 std::string pHashCompute::create_address(std::string ip, int port) {
@@ -80,7 +78,7 @@ void pHashCompute::thread_ready_wait(int num_of_threads) {
 		zmq::message_t ready_msg;
 		this->worker_ready->recv(&ready_msg);
 		std::string msg((const char*)ready_msg.data());
-		LOG4CPLUS_DEBUG(logger, msg << " is ready");
+		BOOST_LOG_SEV(logger,debug)<<msg << " is ready";
 	}
 }
 
@@ -92,22 +90,22 @@ void pHashCompute::thread_send_ready(const std::string& who, zmq::socket_t& read
 }
 
 void pHashCompute::create_threads(int num_of_threads) {
-	LOG4CPLUS_INFO(logger, "Starting task proxy thread");
+	BOOST_LOG_SEV(logger,info)<<"Starting task proxy thread";
 	boost::thread *tp = new boost::thread(&pHashCompute::route_tasks, this);
 	this->worker_group.add_thread(tp);
 
-	LOG4CPLUS_INFO(logger, "Starting result proxy thread");
+	BOOST_LOG_SEV(logger,info)<<"Starting result proxy thread";
 	boost::thread *rp = new boost::thread(&pHashCompute::route_results, this);
 	this->worker_group.add_thread(rp);
 
 	thread_ready_wait(2);
 
-	LOG4CPLUS_INFO(logger, "Starting " << num_of_threads << " worker thread(s)");
+	BOOST_LOG_SEV(logger,info)<<"Starting " << num_of_threads << " worker thread(s)";
 
 	for(int i = 0; i < num_of_threads; i++) {
 		boost::thread *t = new boost::thread(&pHashCompute::process_requests, this, i);
 		this->worker_group.add_thread(t);
-		LOG4CPLUS_INFO(logger, "Worker thread " << i << " started");
+		BOOST_LOG_SEV(logger,info)<<"Worker thread " << i << " started";
 	}
 
 	thread_ready_wait(num_of_threads);
@@ -142,28 +140,28 @@ void pHashCompute::process_requests(int worker_no) {
 		tasks.recv (&id);
 
 		if(! id.more()) {
-			LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " request was not a multi-part message ");
+			BOOST_LOG_SEV(logger,debug)<<"Worker " << worker_no << " request was not a multi-part message ";
 			continue;
 		}
 
 		memcpy(&job_id, id.data(), sizeof(unsigned int));
 		tasks.recv (&request);
 
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " got a request with id " << job_id << " and size " << request.size());
+		BOOST_LOG_SEV(logger,debug)<<"Worker " << worker_no << " got a request with id " << job_id << " and size " << request.size();
 		Magick::Blob blob(request.data(),request.size());
 		long pHash = iph.getLongHash(blob);
 
 		// Send reply back to client
 		zmq::message_t reply (sizeof(long));
 		memcpy ((void *) reply.data (), &pHash, sizeof(long));
-		LOG4CPLUS_DEBUG(logger, "Worker " << worker_no << " sending response for job " << job_id << " with size "  << reply.size());
+		BOOST_LOG_SEV(logger,debug)<<"Worker " << worker_no << " sending response for job " << job_id << " with size "  << reply.size();
 
 		results.send(id, ZMQ_SNDMORE);
 		results.send (reply, 0);
 	}
 
 	} catch (zmq::error_t const &e) {
-		LOG4CPLUS_ERROR(logger, "Worker terminated with " << e.what());
+		BOOST_LOG_SEV(logger,error) << "Worker terminated with " << e.what();
 	}
 }
 
@@ -179,7 +177,7 @@ void pHashCompute::route_tasks() {
 
 		zmq::proxy(*this->client_pull,*this->worker_push, NULL);
 	} catch (zmq::error_t const &e) {
-		LOG4CPLUS_ERROR(logger, "Task proxy terminated with " << e.what());
+		BOOST_LOG_SEV(logger,error) << "Task proxy terminated with " << e.what();
 	}
 }
 
@@ -195,7 +193,7 @@ void pHashCompute::route_results() {
 
 		zmq::proxy(*this->worker_pull,*this->client_push, NULL);
 	} catch (zmq::error_t const &e) {
-		LOG4CPLUS_ERROR(logger, "Result proxy terminated with " << e.what());
+		BOOST_LOG_SEV(logger,error) << "Result proxy terminated with " << e.what();
 	}
 }
 
