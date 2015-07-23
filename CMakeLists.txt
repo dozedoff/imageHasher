@@ -7,6 +7,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Options
 option (BUILD_TESTS "Build and run unit tests" ON)
 
+# Boost needs additional flags
+if(BUILD_SHARED_LIBS)
+        ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
+else()
+        SET(Boost_USE_STATIC_LIBS ON)
+endif()
+
 # Use code coverage
 include(CodeCoverage)
 
@@ -27,7 +34,6 @@ include_directories(commoncpp/src/include)
 
 # Find libraries
 find_library(gtest gtest)
-find_library(log4cplus log4cplus)
 find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
 find_library(zmq zmq)
@@ -43,8 +49,8 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(GTest)
 
 # Libraries to build
-add_library(odbtable SHARED ${odbtablesrc})
-add_library(ihcommon SHARED ${ihcommonsrc})
+add_library(odbtable ${odbtablesrc})
+add_library(ihcommon ${ihcommonsrc})
 
 # Executables to build
 add_executable(imageHasher src/ImageHasher.cpp)
@@ -53,9 +59,9 @@ add_executable(computeClient src/pHashComputeClient.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite} ${sqlite})
-target_link_libraries(ihcommon commoncpp odbtable ${zmq} ${log4cplus} ${Boost_LIBRARIES})
+target_link_libraries(ihcommon commoncpp odbtable ${zmq} ${Boost_LIBRARIES})
 
-target_link_libraries(imageHasher ihcommon commoncpp)
+target_link_libraries(imageHasher ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
 

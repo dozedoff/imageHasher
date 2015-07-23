@@ -17,10 +17,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/thread.hpp>
 
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 #include <iostream>
+#include <iomanip>
 
 #include "commoncpp.hpp"
 #include "main/pHashCompute.hpp"
@@ -28,7 +29,7 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
-using namespace log4cplus;
+using namespace boost::log::trivial;
 using std::string;
 
 class pHashComputeClient {
@@ -38,7 +39,7 @@ public:
 	int run(int, char* []);
 
 private:
-	Logger logger;
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	imageHasher::pHashCompute *phc;
 
 	string remoteIp;
@@ -73,7 +74,7 @@ int pHashComputeClient::run(int argc, char* argv[]) {
 	po::notify(vm);
 
 	if (vm.count("help") > 0) {
-		cout << desc << "\n";
+		std::cout << desc << "\n";
 		exit(0);
 	}
 
@@ -101,11 +102,6 @@ int pHashComputeClient::run(int argc, char* argv[]) {
 }
 
 pHashComputeClient::pHashComputeClient() {
-	PropertyConfigurator config("logs.properties");
-	config.configure();
-
-	logger = Logger::getInstance(LOG4CPLUS_TEXT("pHashComputeClient"));
-
 	phc = NULL;
 
 	this->remoteIp = "127.0.0.1";

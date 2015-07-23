@@ -19,8 +19,8 @@
 
 #include <boost/thread.hpp>
 #include <boost/thread/thread.hpp>
-#include <log4cplus/logger.h>
-#include <log4cplus/loggingmacros.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 namespace imageHasher {
 
@@ -35,7 +35,7 @@ private:
 	static const std::string worker_push_socket;
 	static const std::string worker_ready_socket;
 
-	log4cplus::Logger logger;
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 
 	zmq::context_t *context;
 	zmq::socket_t *worker_pull, *worker_push;
