@@ -23,10 +23,10 @@ NestedTransaction::NestedTransaction(odb::transaction_impl* impl) {
 
 	if(this->active_transaction) {
 		// use the existing transaction
-		this->transaction = std::auto_ptr<odb::transaction>();
+		this->transaction = std::unique_ptr<odb::transaction>();
 	}else{
 		// create a new transaction
-		this->transaction = std::auto_ptr<odb::transaction>(new odb::transaction(impl));
+		this->transaction = std::unique_ptr<odb::transaction>(new odb::transaction(impl));
 	}
 }
 
