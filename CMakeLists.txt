@@ -31,6 +31,7 @@ find_library(log4cplus log4cplus)
 find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
 find_library(zmq zmq)
+find_library(sqlite sqlite3)
 
 ## Find packages
 
@@ -51,8 +52,8 @@ add_executable(hashUtil src/HashUtil.cpp)
 add_executable(computeClient src/pHashComputeClient.cpp)
 
 # Linking
-target_link_libraries(odbtable ${odb} ${odbsqlite})
-target_link_libraries(ihcommon commoncpp odbtable zmq ${log4cplus} ${Boost_LIBRARIES})
+target_link_libraries(odbtable ${odb} ${odbsqlite} ${sqlite})
+target_link_libraries(ihcommon commoncpp odbtable ${zmq} ${log4cplus} ${Boost_LIBRARIES})
 
 target_link_libraries(imageHasher ihcommon commoncpp)
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
