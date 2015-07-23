@@ -4,7 +4,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "../main/pHashCompute.hpp"
+#include "pHashCompute.hpp"
 #include <boost/filesystem.hpp>
 #include <iostream>
 #include <cstring>

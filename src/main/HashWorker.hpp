@@ -20,7 +20,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
-#include "../include/Database.hpp"
+#include "Database.hpp"
 
 using boost::filesystem::path;
 

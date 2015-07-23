@@ -27,7 +27,7 @@ file(GLOB odbtablesrc src/main/table/*.c*)
 file(GLOB ihcommonsrc src/main/*.cpp)
 
 # Include additional header files
-include_directories(src/include)
+include_directories(src/main)
 include_directories(/usr/include/GraphicsMagick/)
 include_directories(cppzmq)
 include_directories(commoncpp/src/include)

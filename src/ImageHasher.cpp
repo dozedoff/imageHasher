@@ -22,9 +22,9 @@
 #include <csignal>
 #include <cstdlib>
 
-#include "include/ImageFinder.hpp"
-#include "include/HashWorker.hpp"
-#include "../commoncpp/src/include/hash/ImagePHash.hpp"
+#include "ImageFinder.hpp"
+#include "HashWorker.hpp"
+#include "hash/ImagePHash.hpp"
 
 using namespace boost::log::trivial;
 using namespace boost::filesystem;

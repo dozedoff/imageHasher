@@ -10,7 +10,7 @@
  *      Author: nicholas
  */
 
-#include "../include/ImageFinder.hpp"
+#include "ImageFinder.hpp"
 
 #include <boost/filesystem.hpp>
 #include <iostream>

@@ -10,7 +10,7 @@
  *      Author: nicholas
  */
 
-#include "../include/Database.hpp"
+#include "Database.hpp"
 #include "NestedTransaction.hpp"
 #include <string>
 

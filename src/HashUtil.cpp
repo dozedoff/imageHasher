@@ -18,10 +18,10 @@
 #include <iostream>
 #include <iomanip>
 
-#include "include/ImageFinder.hpp"
-#include "include/Database.hpp"
-#include "../commoncpp/src/include/commoncpp.hpp"
-#include "../commoncpp/src/include/hash/SHA.hpp"
+#include "ImageFinder.hpp"
+#include "Database.hpp"
+#include "commoncpp.hpp"
+#include "hash/SHA.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;

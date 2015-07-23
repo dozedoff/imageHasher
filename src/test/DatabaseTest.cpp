@@ -4,7 +4,7 @@
  */
 
 #include <gtest/gtest.h>
-#include "../include/Database.hpp"
+#include "Database.hpp"
 #include <boost/filesystem.hpp>
 #include <iostream>
 

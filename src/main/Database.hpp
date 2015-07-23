@@ -24,12 +24,12 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
-#include "../main/table/Hash.hpp"
-#include "../main/table/Hash-odb.hxx"
-#include "../main/table/ImageRecord.hpp"
-#include "../main/table/ImageRecord-odb.hxx"
+#include "table/Hash.hpp"
+#include "table/Hash-odb.hxx"
+#include "table/ImageRecord.hpp"
+#include "table/ImageRecord-odb.hxx"
 
-#include "../main/PreparedQuery.hpp"
+#include "PreparedQuery.hpp"
 
 #include <string>
 

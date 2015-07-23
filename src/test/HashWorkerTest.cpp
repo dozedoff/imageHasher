@@ -10,5 +10,5 @@
  *      Author: nicholas
  */
 
-#include "../include/HashWorker.hpp"
+#include "HashWorker.hpp"
 

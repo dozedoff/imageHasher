@@ -10,10 +10,10 @@
  *      Author: nicholas
  */
 
-#include "../include/HashWorker.hpp"
+#include "HashWorker.hpp"
 #include "table/Hash.hpp"
-#include "../../commoncpp/src/include/commoncpp.hpp"
-#include "../../commoncpp/src/include/hash/SHA.hpp"
+#include "commoncpp.hpp"
+#include "hash/SHA.hpp"
 
 #include <GraphicsMagick/Magick++.h>
 #include <GraphicsMagick/Magick++/Exception.h>
