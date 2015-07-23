@@ -1,2 +1,7 @@
 *.db
 *.bak
+
+# Eclipse project files
+.cproject
+.project
+.settings/
