@@ -89,6 +89,6 @@ set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' 'cppzmq/*' '*-odb.*')
 # Coverage target
 setup_target_for_coverage(
         cov_${PROJECT_NAME}     # Name for custom target.
-        imagehasher_test        # Name of the test driver executable that runs the tests.
+        ${TEST_BINARY}        	# Name of the test driver executable that runs the tests.
         coverage        	# Name of output directory.
 )
