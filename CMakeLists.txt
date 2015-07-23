@@ -70,15 +70,16 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/logs.properties ./logs.properties COP
 
 # Only build tests if GTest is installed and option is selected
 if(GTEST_FOUND AND BUILD_TESTS)
-	add_executable (imagehasher_test ${tests})
-	target_link_libraries(imagehasher_test ihcommon ${GTEST_LIBRARIES})
+	SET(TEST_BINARY test_${PROJECT_NAME})
+	add_executable (${TEST_BINARY} ${tests})
+	target_link_libraries(${TEST_BINARY} ihcommon ${GTEST_LIBRARIES})
 
 	# copy test files to build directory
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/commoncpp DESTINATION ${CMAKE_BINARY_DIR})
 
 	enable_testing()
-	add_test(NAME imagehasher_test COMMAND imagehasher_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-	add_custom_command(TARGET imagehasher_test POST_BUILD COMMAND ctest -V -R imagehasher_test)
+	add_test(NAME ${TEST_BINARY} COMMAND ${TEST_BINARY} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+	add_custom_command(TARGET ${TEST_BINARY} POST_BUILD COMMAND ctest -V -R ${TEST_BINARY})
 elseif(GTEST_FOUND)
 	message("Skipping tests...")
 else()
@@ -90,7 +91,7 @@ set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' 'cppzmq/*' '*-odb.*')
 
 # Coverage target
 setup_target_for_coverage(
-        cov             	# Name for custom target.
+        cov_${PROJECT_NAME}     # Name for custom target.
         imagehasher_test        # Name of the test driver executable that runs the tests.
         coverage        	# Name of output directory.
 )
