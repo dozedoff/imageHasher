@@ -1,4 +1,2 @@
-bin/
-build/
 *.db
 *.bak
