@@ -20,7 +20,7 @@ protected:
 
 	DatabaseTest() {
 		dbPath = new boost::filesystem::path(tempfile());
-		db = new Database(dbPath->c_str());
+		db = new Database(dbPath->generic_string());
 	}
 
 	~DatabaseTest() {

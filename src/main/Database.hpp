@@ -38,7 +38,8 @@ namespace fs = boost::filesystem;
 class Database {
 public:
 	Database();
-	Database(const char*);
+	Database(const char*)__attribute__((deprecated));
+	Database(const std::string db_name);
 	~Database();
 	enum Status {OK, INVALID, FILTER, SHA, UNKNOWN};
 
@@ -89,6 +90,9 @@ private:
 	bool running;
 	boost::thread *workerThread;
 	imageHasher::db::PreparedQuery *prep_query;
+
+	std::string dbName = "imageHasher.db";
+	const std::string prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
 
 	void init();
 	void setupDatabase();

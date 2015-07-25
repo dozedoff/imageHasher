@@ -29,17 +29,19 @@
 #include <iostream>
 #include <iomanip>
 
-const char *dbName = "imageHasher.db";
-
-const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
-
 using namespace odb;
 using namespace imageHasher::db::table;
 using imageHasher::db::NestedTransaction;
 using namespace boost::log::trivial;
 
 Database::Database(const char* dbPath) {
-	dbName = dbPath;
+	std::string new_path(dbPath);
+	this->dbName = new_path;
+	init();
+}
+
+Database::Database(const std::string db_name) {
+	this->dbName = db_name;
 	init();
 }
 
