@@ -79,7 +79,6 @@ public:
 private:
 	std::unique_ptr<odb::database> orm_db;
 
-	char* errMsg;
 	std::list<db_data> dataA, dataB;
 	std::list<db_data> currentList;
 	boost::mutex flipMutex, dbMutex;
