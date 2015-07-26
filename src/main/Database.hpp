@@ -81,7 +81,7 @@ private:
 
 	char* errMsg;
 	std::list<db_data> dataA, dataB;
-	std::list<db_data>* currentList;
+	std::list<db_data> currentList;
 	boost::mutex flipMutex, dbMutex;
 	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertShaRecordQueryStmt, *insertpHashRecordQueryStmt, *getPhashQueryStmt, *getpHashidQuery;
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;

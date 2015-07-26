@@ -83,7 +83,7 @@ void Database::exec(const char* command) {
 
 void Database::init() {
 	boost::mutex::scoped_lock lock(dbMutex);
-	this->currentList = &dataA;
+	this->currentList = dataA;
 	this->recordsWritten = 0;
 	this->invalid_files = 0;
 	this->sha_found = 0;
@@ -141,22 +141,22 @@ void Database::setupDatabase() {
 
 void Database::add(db_data data) {
 	boost::mutex::scoped_lock lock(flipMutex);
-	currentList->push_back(data);
+	currentList.push_back(data);
 }
 
 void Database::flipLists() {
 	boost::mutex::scoped_lock lock(flipMutex);
 
-	if(currentList == &dataA) {
-		currentList = &dataB;
+	if(&currentList == &dataA) {
+		currentList = dataB;
 	}else{
-		currentList = &dataA;
+		currentList = dataA;
 	}
 }
 
 int Database::drain() {
 	boost::mutex::scoped_lock lock(dbMutex);
-	std::list<db_data>* workList;
+	std::list<db_data> workList;
 	int drainCount = 0;
 
 	workList = currentList;
@@ -164,7 +164,7 @@ int Database::drain() {
 
 	NestedTransaction t (orm_db->begin());
 
-	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
+	for(std::list<db_data>::iterator ite = workList.begin(); ite != workList.end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
@@ -172,7 +172,7 @@ int Database::drain() {
 
 	t.commit();
 
-	workList->clear();
+	workList.clear();
 	return drainCount;
 }
 
@@ -327,7 +327,7 @@ void Database::doWork() {
 			BOOST_LOG_SEV(logger,info) <<"DB thread interrupted";
 		}
 
-		if(currentList->size() > 1000) {
+		if(currentList.size() > 1000) {
 			int drainCount = drain();
 			BOOST_LOG_SEV(logger,info) << drainCount << " records processed, Total: " << recordsWritten;
 		}
