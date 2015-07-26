@@ -75,10 +75,6 @@ void Database::shutdown() {
 	}
 }
 
-void Database::exec(const char* command) {
-	orm_db->execute(command);
-}
-
 void Database::init() {
 	boost::mutex::scoped_lock lock(dbMutex);
 	this->currentList = dataA;

@@ -68,7 +68,6 @@ public:
 	int64_t getPhash(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
-	void exec(const char*);
 	bool sha_exists(std::string sha);
 	int add_path_placeholder(std::string path);
 	imageHasher::db::table::Hash get_hash(std::string sha);
