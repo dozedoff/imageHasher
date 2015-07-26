@@ -98,7 +98,6 @@ private:
 	void flipLists();
 	void doWork();
 	void prepareStatements();
-	void createPreparedStatement(const char*&, sqlite3_stmt*&);
 	void addToBatch(db_data);
 	int executeBatch();
 	static int callback(void*, int, char**, char**);
