@@ -51,7 +51,6 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
-	delete this->prep_query;
 }
 
 int Database::flush() {
@@ -72,7 +71,6 @@ void Database::shutdown() {
 		BOOST_LOG_SEV(logger,info) << "Waiting for db worker to finish...";
 		workerThread->interrupt();
 		workerThread->join();
-		delete(workerThread);
 		BOOST_LOG_SEV(logger,info) << "Closing database...";
 	}
 }
@@ -92,7 +90,7 @@ void Database::init() {
 	setupDatabase();
 	prepareStatements();
 
-	workerThread = new boost::thread(&Database::doWork, this);
+	workerThread.reset(new boost::thread(&Database::doWork, this));
 }
 
 bool Database::is_db_initialised() {
@@ -316,7 +314,7 @@ void Database::add_filter(db_data data) {
 
 void Database::prepareStatements() {
 	BOOST_LOG_SEV(logger,info) << "Creating prepared statements...";
-	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db.get());
+	this->prep_query.reset(new imageHasher::db::PreparedQuery(this->orm_db.get()));
 }
 
 void Database::doWork() {

@@ -87,8 +87,8 @@ private:
 	unsigned int sha_found;
 	unsigned int invalid_files;
 	bool running;
-	boost::thread *workerThread;
-	imageHasher::db::PreparedQuery *prep_query;
+	std::unique_ptr<boost::thread> workerThread;
+	std::unique_ptr<imageHasher::db::PreparedQuery> prep_query;
 
 	std::string dbName = "imageHasher.db";
 	const std::string prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
