@@ -32,6 +32,7 @@
 #include "PreparedQuery.hpp"
 
 #include <string>
+#include <memory>
 
 namespace fs = boost::filesystem;
 
@@ -76,7 +77,7 @@ public:
 	int prune_hash_table();
 
 private:
-	odb::database *orm_db;
+	std::unique_ptr<odb::database> orm_db;
 
 	char* errMsg;
 	std::list<db_data> dataA, dataB;

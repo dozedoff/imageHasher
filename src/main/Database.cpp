@@ -52,7 +52,6 @@ Database::Database() {
 Database::~Database() {
 	shutdown();
 	delete this->prep_query;
-	delete orm_db;
 }
 
 int Database::flush() {
@@ -117,7 +116,7 @@ void Database::initialise_db() {
 }
 
 void Database::setupDatabase() {
-	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+	this->orm_db.reset(new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 
 	BOOST_LOG_SEV(logger,info) << "Setting up database " << dbName;
 
@@ -317,7 +316,7 @@ void Database::add_filter(db_data data) {
 
 void Database::prepareStatements() {
 	BOOST_LOG_SEV(logger,info) << "Creating prepared statements...";
-	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
+	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db.get());
 }
 
 void Database::doWork() {
