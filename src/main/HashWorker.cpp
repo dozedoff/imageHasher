@@ -21,8 +21,26 @@
 using std::list;
 using namespace boost::log::trivial;
 
-HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorkers(numOfWorkers), imagePaths(*imagePaths) {
+HashWorker::HashWorker(list<path> *imagePaths,int numOfWorkers = 1) : numOfWorkers(numOfWorkers) {
 	running = true;
+
+	this->imagePaths = std::shared_ptr<std::list<path>>(imagePaths);
+
+	if (numOfWorkers > 0) {
+
+	} else {
+		throw "Number of  workers must be greater than 0";
+	}
+
+	totalNumOfFiles = imagePaths->size();
+	skipped_files = 0;
+}
+
+HashWorker::HashWorker(std::shared_ptr<std::list<path>> image_paths, int number_of_workers = 1) : numOfWorkers(number_of_workers){
+	running = true;
+
+	this->imagePaths = image_paths;
+
 	if (numOfWorkers > 0) {
 
 	} else {
@@ -52,15 +70,15 @@ void HashWorker::start() {
 
 void HashWorker::clear() {
 	boost::mutex::scoped_lock lock(workQueueMutex);
-	imagePaths.clear();
+	imagePaths->clear();
 }
 
 path HashWorker::getWork() {
 	boost::mutex::scoped_lock lock(workQueueMutex);
 
-	if (!imagePaths.empty()) {
-		path next = imagePaths.front();
-		imagePaths.pop_front();
+	if (!imagePaths->empty()) {
+		path next = imagePaths->front();
+		imagePaths->pop_front();
 		return next;
 	} else {
 		running = false;

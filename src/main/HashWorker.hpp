@@ -20,19 +20,22 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
+#include <memory>
+
 #include "Database.hpp"
 
 using boost::filesystem::path;
 
 class HashWorker {
 public:
-	HashWorker(std::list<path>* ,int);
+	HashWorker(std::shared_ptr<std::list<path>> image_paths, int number_of_workers);
+	HashWorker(std::list<path>* ,int)__attribute__((deprecated));
 	void start();
 	void clear();
 
 private:
 	int numOfWorkers;
-	std::list<path> imagePaths;
+	std::shared_ptr<std::list<path>> imagePaths;
 	boost::mutex workQueueMutex;
 	boost::mutex stats_mutex;
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
