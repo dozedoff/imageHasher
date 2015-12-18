@@ -47,6 +47,9 @@ find_library(sqlite sqlite3)
 find_package(Boost 1.36.0 COMPONENTS log filesystem system thread chrono program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
+# Add catch testing framework
+include_directories(catch/include)
+
 # Add GTest library
 find_package(GTest)
 
