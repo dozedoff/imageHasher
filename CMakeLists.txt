@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 project(imageHasher CXX)
 
+### User options ###
+
+option(BUILD_SHARED_LIBS "Build as shared or static library" ON)
+option(BUILD_TESTS "Build and run unit tests" ON)
+
+#################################
+
 add_definitions(-std=c++11)
 
 # Add additional cmake modules
