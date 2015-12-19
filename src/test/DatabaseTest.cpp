@@ -3,12 +3,12 @@
  * http://opensource.org/licenses/MIT
  */
 
-#include <gtest/gtest.h>
+#include "catch.hpp"
 #include "Database.hpp"
 #include <boost/filesystem.hpp>
 #include <iostream>
 
-class DatabaseTest : public :: testing::Test {
+class DatabaseTestFixture {
 protected:
 
 	Database* db;
@@ -18,23 +18,23 @@ protected:
 		return boost::filesystem::temp_directory_path() /= boost::filesystem::unique_path();
 	}
 
-	DatabaseTest() {
+	DatabaseTestFixture() {
 		dbPath = new boost::filesystem::path(tempfile());
 		db = new Database(dbPath->generic_string());
 	}
 
-	~DatabaseTest() {
+	~DatabaseTestFixture() {
 		db->shutdown();
 		delete(db);
 		delete(dbPath);
 	}
 };
 
-TEST_F(DatabaseTest, dbCreationCustom) {
-	ASSERT_TRUE(boost::filesystem::exists(*dbPath));
+TEST_CASE_METHOD(DatabaseTestFixture, "dbCreationCustom", "[DatabaseTest]") {
+	REQUIRE(boost::filesystem::exists(*dbPath) == true);
 }
 
-TEST_F(DatabaseTest, writeRecords) {
+TEST_CASE_METHOD(DatabaseTestFixture, "writeRecords", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("bar", "bar",0);
 
@@ -43,26 +43,10 @@ TEST_F(DatabaseTest, writeRecords) {
 
 	db->shutdown();
 
-	ASSERT_EQ(2, db->getRecordsWritten());
+	REQUIRE(db->getRecordsWritten() == 2);
 }
 
-TEST_F(DatabaseTest, writeRecordsWithInvalid) {
-	Database::db_data dbd1("foo","foo",0);
-	Database::db_data dbd2("bar", "bar",0);
-	Database::db_data dbd3("notValid", "",0);
-
-	dbd3.status = Database::INVALID;
-
-	db->add(dbd1);
-	db->add(dbd2);
-	db->add(dbd3);
-
-	db->shutdown();
-
-	ASSERT_EQ(2, db->getRecordsWritten());
-}
-
-TEST_F(DatabaseTest, getInvalidFiles) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "writeRecordsWithInvalid", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("bar", "bar",0);
 	Database::db_data dbd3("notValid", "",0);
@@ -75,10 +59,26 @@ TEST_F(DatabaseTest, getInvalidFiles) {
 
 	db->shutdown();
 
-	ASSERT_EQ(1, db->get_invalid_files());
+	REQUIRE(db->getRecordsWritten() == 2);
 }
 
-TEST_F(DatabaseTest, writeDuplicateRecords) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getInvalidFiles","[DatabaseTest]") {
+	Database::db_data dbd1("foo","foo",0);
+	Database::db_data dbd2("bar", "bar",0);
+	Database::db_data dbd3("notValid", "",0);
+
+	dbd3.status = Database::INVALID;
+
+	db->add(dbd1);
+	db->add(dbd2);
+	db->add(dbd3);
+
+	db->shutdown();
+
+	REQUIRE(db->get_invalid_files());
+}
+
+TEST_CASE_METHOD(DatabaseTestFixture,  "writeDuplicateRecords", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("foo","foo",0);
 
@@ -87,10 +87,10 @@ TEST_F(DatabaseTest, writeDuplicateRecords) {
 
 	db->shutdown();
 
-	ASSERT_EQ(1, db->getRecordsWritten());
+	REQUIRE(db->getRecordsWritten() == 1);
 }
 
-TEST_F(DatabaseTest, writeDuplicateRecordsDifferentPath) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "writeDuplicateRecordsDifferentPath", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("bar","foo",0);
 
@@ -99,10 +99,10 @@ TEST_F(DatabaseTest, writeDuplicateRecordsDifferentPath) {
 
 	db->shutdown();
 
-	ASSERT_EQ(2, db->getRecordsWritten());
+	REQUIRE(db->getRecordsWritten() == 2);
 }
 
-TEST_F(DatabaseTest, getShaFound) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getShaFound", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	Database::db_data dbd2("bar","foo",0);
 
@@ -111,24 +111,24 @@ TEST_F(DatabaseTest, getShaFound) {
 
 	db->shutdown();
 
-	ASSERT_EQ(1, db->get_sha_found());
+	REQUIRE(db->get_sha_found()== 1);
 }
 
-TEST_F(DatabaseTest, entryExistsNonExistant) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "entryExistsNonExistant", "[DatabaseTest]") {
 	Database::db_data dbd1("foo");
 
-	ASSERT_FALSE(db->entryExists(dbd1));
+	REQUIRE(db->entryExists(dbd1) == false);
 }
 
-TEST_F(DatabaseTest, entryExists) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "entryExists", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	db->add(dbd1);
 	db->flush();
-	ASSERT_TRUE(db->entryExists(dbd1));
+	REQUIRE(db->entryExists(dbd1) == true);
 	db->shutdown();
 }
 
-TEST_F(DatabaseTest, getSHAvalid) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getSHAvalid", "[DatabaseTest]") {
 	Database::db_data data("foobar", "ABCD", 1);
 
 	db->add(data);
@@ -136,25 +136,25 @@ TEST_F(DatabaseTest, getSHAvalid) {
 
 	std::string shaHash = db->getSHA(fs::path("foobar"));
 
-	ASSERT_EQ("ABCD", shaHash);
+	REQUIRE(shaHash == "ABCD");
 	db->shutdown();
 }
 
-TEST_F(DatabaseTest, getSHANotExisting) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getSHANotExisting", "[DatabaseTest]") {
 	std::string shaHash = db->getSHA(fs::path("unknown"));
 
-	ASSERT_TRUE(shaHash.empty());
+	REQUIRE(shaHash.empty() == true);
 	db->shutdown();
 }
 
-TEST_F(DatabaseTest, add_path_placeholder) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "add_path_placeholder", "[DatabaseTest]") {
 	int id = db->add_path_placeholder("placeholder");
 	db->shutdown();
 
-	ASSERT_EQ(1, id);
+	REQUIRE(id == 1);
 }
 
-TEST_F(DatabaseTest, get_files_with_path) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "get_files_with_path", "[DatabaseTest]") {
 	Database::db_data data0("/foo/bar", "ABCD", 1);
 	Database::db_data data1("/foo/bar/bar", "ABCD", 1);
 	Database::db_data data2("/foo/baz", "ABCD", 1);
@@ -172,15 +172,15 @@ TEST_F(DatabaseTest, get_files_with_path) {
 	fs::path search_path("/foo/");
 
 	std::list<fs::path> paths = db->getFilesWithPath(search_path);
-	ASSERT_EQ(3,paths.size());
+	REQUIRE(paths.size() == 3);
 
 	paths.sort();
 
-	ASSERT_STREQ("/foo/bar", paths.front().string().c_str());
-	ASSERT_STREQ("/foo/baz", paths.back().string().c_str());
+	REQUIRE(paths.front().string() == "/foo/bar");
+	REQUIRE(paths.back().string() == "/foo/baz");
 }
 
-TEST_F(DatabaseTest, prunePath) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "prunePath", "[DatabaseTest]") {
 	Database::db_data data0("/foo/bar", "ABCD", 1);
 	Database::db_data data1("/foo/bar/bar", "ABCD", 1);
 	Database::db_data data2("/foo/baz", "ABCD", 1);
@@ -201,56 +201,56 @@ TEST_F(DatabaseTest, prunePath) {
 	to_delete.push_back(fs::path("/foo/baz"));
 
 	// guard
-	ASSERT_TRUE(db->entryExists(to_delete.front()));
-	ASSERT_TRUE(db->entryExists(to_delete.back()));
+	REQUIRE(db->entryExists(to_delete.front()) == true);
+	REQUIRE(db->entryExists(to_delete.back()) == true);
 
 	db->prunePath(to_delete);
 
-	ASSERT_FALSE(db->entryExists(to_delete.front()));
-	ASSERT_FALSE(db->entryExists(to_delete.back()));
+	REQUIRE(db->entryExists(to_delete.front()) == false);
+	REQUIRE(db->entryExists(to_delete.back()) == false);
 }
 
-TEST_F(DatabaseTest, getPhash) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getPhash", "[DatabaseTest]") {
 	Database::db_data data("/foo/bar", "ABCD", 42);
 	db->add(data);
 	db->flush();
 
 	int64_t pHash = db->getPhash("/foo/bar");
 
-	ASSERT_EQ(42, pHash);
+	REQUIRE(pHash == 42);
 }
 
-TEST_F(DatabaseTest, getPhash_invalid_entry) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "getPhash_invalid_entry", "[DatabaseTest]") {
 	Database::db_data data("/foo/bar", "ABCD", 42);
 	db->add(data);
 	db->flush();
 
 	int64_t pHash = db->getPhash("/foo/baz");
 
-	ASSERT_EQ(-1, pHash);
+	REQUIRE(pHash == -1);
 }
 
-TEST_F(DatabaseTest, get_hash_phash) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "get_hash_phash", "[DatabaseTest]") {
 	Database::db_data data("/foo/bar", "ABCD", 42);
 	db->add(data);
 	db->flush();
 
 	imageHasher::db::table::Hash hash = db->get_hash(42);
 
-	ASSERT_STREQ("ABCD", hash.get_sha256().c_str());
+	REQUIRE(hash.get_sha256() == "ABCD");
 }
 
-TEST_F(DatabaseTest, get_hash_phash_not_valid) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "get_hash_phash_not_valid", "[DatabaseTest]") {
 	Database::db_data data("/foo/bar", "ABCD", 42);
 	db->add(data);
 	db->flush();
 
 	imageHasher::db::table::Hash hash = db->get_hash(12);
 
-	ASSERT_FALSE(hash.is_valid());
+	REQUIRE(hash.is_valid() == false);
 }
 
-TEST_F(DatabaseTest, prune_hash_table_prune_count) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "prune_hash_table_prune_count", "[DatabaseTest]") {
 	db->add(Database::db_data ("/foo/bar", "1", 41));
 	db->add(Database::db_data ("/foo/bar2", "2", 42));
 	db->add(Database::db_data ("/foo/bar3", "3", 43));
@@ -264,10 +264,10 @@ TEST_F(DatabaseTest, prune_hash_table_prune_count) {
 
 	int pruned = db->prune_hash_table();
 
-	ASSERT_EQ(3, pruned);
+	REQUIRE(pruned == 3);
 }
 
-TEST_F(DatabaseTest, prune_hash_table_prune_count_zero) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "prune_hash_table_prune_count_zero", "[DatabaseTest]") {
 	db->add(Database::db_data ("/foo/bar", "1", 41));
 	db->add(Database::db_data ("/foo/bar2", "2", 42));
 	db->add(Database::db_data ("/foo/bar3", "3", 43));
@@ -278,10 +278,10 @@ TEST_F(DatabaseTest, prune_hash_table_prune_count_zero) {
 
 	int pruned = db->prune_hash_table();
 
-	ASSERT_EQ(0, pruned);
+	REQUIRE(pruned == 0);
 }
 
-TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
+TEST_CASE_METHOD(DatabaseTestFixture,  "prune_hash_table_hash_exists", "[DatabaseTest]") {
 	db->add(Database::db_data ("/foo/bar", "1", 41));
 	db->add(Database::db_data ("/foo/bar2", "2", 42));
 	db->add(Database::db_data ("/foo/bar3", "3", 43));
@@ -289,12 +289,12 @@ TEST_F(DatabaseTest, prune_hash_table_hash_exists) {
 
 	db->flush();
 
-	ASSERT_TRUE(db->sha_exists("1"));
+	REQUIRE(db->sha_exists("1") == true);
 
 	std::list<boost::filesystem::path> paths = db->getFilesWithPath(boost::filesystem::path("/foo/"));
 	db->prunePath(paths);
 
 	db->prune_hash_table();
 
-	ASSERT_FALSE(db->sha_exists("1"));
+	REQUIRE(db->sha_exists("1") == false);
 }
