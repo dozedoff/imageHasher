@@ -29,17 +29,19 @@
 #include <iostream>
 #include <iomanip>
 
-const char *dbName = "imageHasher.db";
-
-const char *prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
-
 using namespace odb;
 using namespace imageHasher::db::table;
 using imageHasher::db::NestedTransaction;
 using namespace boost::log::trivial;
 
 Database::Database(const char* dbPath) {
-	dbName = dbPath;
+	std::string new_path(dbPath);
+	this->dbName = new_path;
+	init();
+}
+
+Database::Database(const std::string db_name) {
+	this->dbName = db_name;
 	init();
 }
 
@@ -49,8 +51,6 @@ Database::Database() {
 
 Database::~Database() {
 	shutdown();
-	delete this->prep_query;
-	delete orm_db;
 }
 
 int Database::flush() {
@@ -71,18 +71,13 @@ void Database::shutdown() {
 		BOOST_LOG_SEV(logger,info) << "Waiting for db worker to finish...";
 		workerThread->interrupt();
 		workerThread->join();
-		delete(workerThread);
 		BOOST_LOG_SEV(logger,info) << "Closing database...";
 	}
 }
 
-void Database::exec(const char* command) {
-	orm_db->execute(command);
-}
-
 void Database::init() {
 	boost::mutex::scoped_lock lock(dbMutex);
-	this->currentList = &dataA;
+	this->currentList = dataA;
 	this->recordsWritten = 0;
 	this->invalid_files = 0;
 	this->sha_found = 0;
@@ -91,7 +86,7 @@ void Database::init() {
 	setupDatabase();
 	prepareStatements();
 
-	workerThread = new boost::thread(&Database::doWork, this);
+	workerThread.reset(new boost::thread(&Database::doWork, this));
 }
 
 bool Database::is_db_initialised() {
@@ -115,7 +110,7 @@ void Database::initialise_db() {
 }
 
 void Database::setupDatabase() {
-	orm_db = new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+	this->orm_db.reset(new sqlite::database(dbName,SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE));
 
 	BOOST_LOG_SEV(logger,info) << "Setting up database " << dbName;
 
@@ -140,22 +135,22 @@ void Database::setupDatabase() {
 
 void Database::add(db_data data) {
 	boost::mutex::scoped_lock lock(flipMutex);
-	currentList->push_back(data);
+	currentList.push_back(data);
 }
 
 void Database::flipLists() {
 	boost::mutex::scoped_lock lock(flipMutex);
 
-	if(currentList == &dataA) {
-		currentList = &dataB;
+	if(&currentList == &dataA) {
+		currentList = dataB;
 	}else{
-		currentList = &dataA;
+		currentList = dataA;
 	}
 }
 
 int Database::drain() {
 	boost::mutex::scoped_lock lock(dbMutex);
-	std::list<db_data>* workList;
+	std::list<db_data> workList;
 	int drainCount = 0;
 
 	workList = currentList;
@@ -163,7 +158,7 @@ int Database::drain() {
 
 	NestedTransaction t (orm_db->begin());
 
-	for(std::list<db_data>::iterator ite = workList->begin(); ite != workList->end(); ++ite) {
+	for(std::list<db_data>::iterator ite = workList.begin(); ite != workList.end(); ++ite) {
 		addToBatch(*ite);
 		recordsWritten++;
 		drainCount++;
@@ -171,7 +166,7 @@ int Database::drain() {
 
 	t.commit();
 
-	workList->clear();
+	workList.clear();
 	return drainCount;
 }
 
@@ -315,7 +310,7 @@ void Database::add_filter(db_data data) {
 
 void Database::prepareStatements() {
 	BOOST_LOG_SEV(logger,info) << "Creating prepared statements...";
-	this->prep_query = new imageHasher::db::PreparedQuery(this->orm_db);
+	this->prep_query.reset(new imageHasher::db::PreparedQuery(this->orm_db.get()));
 }
 
 void Database::doWork() {
@@ -326,7 +321,7 @@ void Database::doWork() {
 			BOOST_LOG_SEV(logger,info) <<"DB thread interrupted";
 		}
 
-		if(currentList->size() > 1000) {
+		if(currentList.size() > 1000) {
 			int drainCount = drain();
 			BOOST_LOG_SEV(logger,info) << drainCount << " records processed, Total: " << recordsWritten;
 		}

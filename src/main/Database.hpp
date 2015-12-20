@@ -32,13 +32,15 @@
 #include "PreparedQuery.hpp"
 
 #include <string>
+#include <memory>
 
 namespace fs = boost::filesystem;
 
 class Database {
 public:
 	Database();
-	Database(const char*);
+	Database(const char*)__attribute__((deprecated));
+	Database(const std::string db_name);
 	~Database();
 	enum Status {OK, INVALID, FILTER, SHA, UNKNOWN};
 
@@ -66,7 +68,6 @@ public:
 	int64_t getPhash(fs::path filepath);
 	std::list<fs::path> getFilesWithPath(fs::path);
 	void prunePath(std::list<fs::path>);
-	void exec(const char*);
 	bool sha_exists(std::string sha);
 	int add_path_placeholder(std::string path);
 	imageHasher::db::table::Hash get_hash(std::string sha);
@@ -75,20 +76,21 @@ public:
 	int prune_hash_table();
 
 private:
-	odb::database *orm_db;
+	std::unique_ptr<odb::database> orm_db;
 
-	char* errMsg;
 	std::list<db_data> dataA, dataB;
-	std::list<db_data>* currentList;
+	std::list<db_data> currentList;
 	boost::mutex flipMutex, dbMutex;
-	sqlite3_stmt *addOkStmt, *addInvalidStmt, *addFilterStmt, *startTrStmt, *checkExistsStmt, *checkSHAStmt, *commitTrStmt, *pruneQueryStmt, *pruneDeleteImageStmt, *pruneDeleteBadFileStmt, *updateShaStmt, *getSHAqueryStmt, *getSHAidQueryStmt, *insertShaRecordQueryStmt, *insertpHashRecordQueryStmt, *getPhashQueryStmt, *getpHashidQuery;
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 	unsigned int recordsWritten;
 	unsigned int sha_found;
 	unsigned int invalid_files;
 	bool running;
-	boost::thread *workerThread;
-	imageHasher::db::PreparedQuery *prep_query;
+	std::unique_ptr<boost::thread> workerThread;
+	std::unique_ptr<imageHasher::db::PreparedQuery> prep_query;
+
+	std::string dbName = "imageHasher.db";
+	const std::string prune_hash_table_query = "DELETE FROM hash WHERE hash_id IN (SELECT hash_id FROM (SELECT imagerecord.hash, hash.hash_id FROM hash LEFT OUTER JOIN imagerecord  ON hash = hash_id) WHERE hash IS null);";
 
 	void init();
 	void setupDatabase();
@@ -96,7 +98,6 @@ private:
 	void flipLists();
 	void doWork();
 	void prepareStatements();
-	void createPreparedStatement(const char*&, sqlite3_stmt*&);
 	void addToBatch(db_data);
 	int executeBatch();
 	static int callback(void*, int, char**, char**);

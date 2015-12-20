@@ -22,6 +22,8 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 
+#include <memory>
+
 namespace imageHasher {
 
 class pHashCompute {
@@ -37,10 +39,10 @@ private:
 
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
 
-	zmq::context_t *context;
-	zmq::socket_t *worker_pull, *worker_push;
-	zmq::socket_t *client_pull, *client_push;
-	zmq::socket_t *worker_ready;
+	std::shared_ptr<zmq::context_t> context;
+	std::unique_ptr<zmq::socket_t> worker_pull, worker_push;
+	std::unique_ptr<zmq::socket_t> client_pull, client_push;
+	std::unique_ptr<zmq::socket_t> worker_ready;
 
 	boost::thread_group worker_group;
 

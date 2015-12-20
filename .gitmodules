@@ -7,3 +7,6 @@
 [submodule "cmake"]
 	path = cmake
 	url = git@github.com:dozedoff/cmake-modules.git
+[submodule "catch"]
+	path = catch
+	url = git@github.com:philsquared/Catch.git
