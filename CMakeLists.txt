@@ -42,7 +42,6 @@ include_directories(cppzmq)
 include_directories(commoncpp/src/include)
 
 # Find libraries
-find_library(gtest gtest)
 find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
 find_library(zmq zmq)
@@ -56,9 +55,6 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 # Add catch testing framework
 include_directories(catch/include)
-
-# Add GTest library
-find_package(GTest)
 
 # Libraries to build
 add_library(odbtable ${odbtablesrc})
@@ -77,11 +73,11 @@ target_link_libraries(imageHasher ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
 
-# Only build tests if GTest is installed and option is selected
-if(GTEST_FOUND AND BUILD_TESTS)
+# Only build tests if the option is selected
+if(BUILD_TESTS)
 	SET(TEST_BINARY test_${PROJECT_NAME})
 	add_executable (${TEST_BINARY} ${tests})
-	target_link_libraries(${TEST_BINARY} ihcommon ${GTEST_LIBRARIES})
+	target_link_libraries(${TEST_BINARY} ihcommon)
 
 	# copy test files to build directory
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/commoncpp DESTINATION ${CMAKE_BINARY_DIR})
@@ -89,10 +85,8 @@ if(GTEST_FOUND AND BUILD_TESTS)
 	enable_testing()
 	add_test(NAME ${TEST_BINARY} COMMAND ${TEST_BINARY} WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 	add_custom_command(TARGET ${TEST_BINARY} POST_BUILD COMMAND ctest -V -R ${TEST_BINARY})
-elseif(GTEST_FOUND)
-	message("Skipping tests...")
 else()
-	message(WARNING "GTest library not found, skipping tests.")
+	message("Skipping tests...")
 endif()
 
 # Ignore in coverage report
