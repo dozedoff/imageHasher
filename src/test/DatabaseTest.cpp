@@ -31,7 +31,7 @@ protected:
 };
 
 TEST_CASE_METHOD(DatabaseTestFixture, "dbCreationCustom", "[DatabaseTest]") {
-	REQUIRE(boost::filesystem::exists(*dbPath) == true);
+	REQUIRE(boost::filesystem::exists(*dbPath));
 }
 
 TEST_CASE_METHOD(DatabaseTestFixture, "writeRecords", "[DatabaseTest]") {
@@ -117,14 +117,14 @@ TEST_CASE_METHOD(DatabaseTestFixture,  "getShaFound", "[DatabaseTest]") {
 TEST_CASE_METHOD(DatabaseTestFixture,  "entryExistsNonExistant", "[DatabaseTest]") {
 	Database::db_data dbd1("foo");
 
-	REQUIRE(db->entryExists(dbd1) == false);
+	REQUIRE_FALSE(db->entryExists(dbd1));
 }
 
 TEST_CASE_METHOD(DatabaseTestFixture,  "entryExists", "[DatabaseTest]") {
 	Database::db_data dbd1("foo","foo",0);
 	db->add(dbd1);
 	db->flush();
-	REQUIRE(db->entryExists(dbd1) == true);
+	REQUIRE(db->entryExists(dbd1));
 	db->shutdown();
 }
 
@@ -143,7 +143,7 @@ TEST_CASE_METHOD(DatabaseTestFixture,  "getSHAvalid", "[DatabaseTest]") {
 TEST_CASE_METHOD(DatabaseTestFixture,  "getSHANotExisting", "[DatabaseTest]") {
 	std::string shaHash = db->getSHA(fs::path("unknown"));
 
-	REQUIRE(shaHash.empty() == true);
+	REQUIRE(shaHash.empty());
 	db->shutdown();
 }
 
@@ -201,13 +201,13 @@ TEST_CASE_METHOD(DatabaseTestFixture,  "prunePath", "[DatabaseTest]") {
 	to_delete.push_back(fs::path("/foo/baz"));
 
 	// guard
-	REQUIRE(db->entryExists(to_delete.front()) == true);
-	REQUIRE(db->entryExists(to_delete.back()) == true);
+	CHECK(db->entryExists(to_delete.front()));
+	CHECK(db->entryExists(to_delete.back()));
 
 	db->prunePath(to_delete);
 
-	REQUIRE(db->entryExists(to_delete.front()) == false);
-	REQUIRE(db->entryExists(to_delete.back()) == false);
+	REQUIRE_FALSE(db->entryExists(to_delete.front()));
+	REQUIRE_FALSE(db->entryExists(to_delete.back()));
 }
 
 TEST_CASE_METHOD(DatabaseTestFixture,  "getPhash", "[DatabaseTest]") {
@@ -247,7 +247,7 @@ TEST_CASE_METHOD(DatabaseTestFixture,  "get_hash_phash_not_valid", "[DatabaseTes
 
 	imageHasher::db::table::Hash hash = db->get_hash(12);
 
-	REQUIRE(hash.is_valid() == false);
+	REQUIRE_FALSE(hash.is_valid());
 }
 
 TEST_CASE_METHOD(DatabaseTestFixture,  "prune_hash_table_prune_count", "[DatabaseTest]") {
@@ -289,12 +289,12 @@ TEST_CASE_METHOD(DatabaseTestFixture,  "prune_hash_table_hash_exists", "[Databas
 
 	db->flush();
 
-	REQUIRE(db->sha_exists("1") == true);
+	REQUIRE(db->sha_exists("1"));
 
 	std::list<boost::filesystem::path> paths = db->getFilesWithPath(boost::filesystem::path("/foo/"));
 	db->prunePath(paths);
 
 	db->prune_hash_table();
 
-	REQUIRE(db->sha_exists("1") == false);
+	REQUIRE_FALSE(db->sha_exists("1"));
 }
