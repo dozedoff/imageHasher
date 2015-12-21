@@ -90,7 +90,7 @@ else()
 endif()
 
 # Ignore in coverage report
-set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' 'cppzmq/*' '*-odb.*')
+set(LCOV_REMOVE_EXTRA 'test/*' 'commoncpp/*' 'cppzmq/*' '*-odb.*' 'catch/*')
 
 # Coverage target
 setup_target_for_coverage(
