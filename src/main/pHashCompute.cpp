@@ -24,7 +24,14 @@ const std::string pHashCompute::worker_push_socket = "inproc://workertasks";
 const std::string pHashCompute::worker_pull_socket = "inproc://workerresults";
 const std::string pHashCompute::worker_ready_socket = "inproc://workerready";
 
-pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers) {
+pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers)
+:
+  context(new zmq::context_t(1)),
+  worker_push(new zmq::socket_t(*(this->context), ZMQ_PUSH)),
+  worker_pull(new zmq::socket_t(*(this->context), ZMQ_PULL)),
+  worker_ready(new zmq::socket_t(*(this->context), ZMQ_PULL)),
+  client_pull(new zmq::socket_t(*(this->context), ZMQ_PULL))
+  {
 	if(workers < 1) {
                 throw std::runtime_error("Number of threads must be 1 or greater");
         }
@@ -34,13 +41,6 @@ pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remo
 }
 
 void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remote_pull_port) {
-	this->context = std::shared_ptr<zmq::context_t>(new zmq::context_t(1));
-
-	// setup worker thread sockets
-	this->worker_push.reset(new zmq::socket_t(*(this->context), ZMQ_PUSH));
-	this->worker_pull.reset(new zmq::socket_t(*(this->context), ZMQ_PULL));
-	this->worker_ready.reset(new zmq::socket_t(*(this->context), ZMQ_PULL));
-
 	this->worker_push->bind(this->worker_push_socket.c_str());
 	this->worker_pull->bind(this->worker_pull_socket.c_str());
 	this->worker_ready->bind(this->worker_ready_socket.c_str());
@@ -49,7 +49,6 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 	this->pull_addr = create_address(ip, remote_push_port);
 	this->push_addr = create_address(ip, remote_pull_port);
 
-	this->client_pull.reset(new zmq::socket_t(*(this->context), ZMQ_PULL));
 	this->client_pull->connect(pull_addr.c_str());
 
 	if(!this->client_pull->connected()) {

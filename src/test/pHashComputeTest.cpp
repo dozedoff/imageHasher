@@ -19,7 +19,10 @@ protected:
 	zmq::context_t *context;
 	zmq::socket_t *pull_socket, *push_socket;
 
-	pHashComputeTest() {
+	pHashComputeTest()
+	:
+	phc(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4))
+	{
 		Magick::InitializeMagick(NULL);
 		context = new zmq::context_t(1);
 
@@ -28,8 +31,6 @@ protected:
 
 		push_socket = new zmq::socket_t(*context, ZMQ_PUSH);
 		push_socket->bind("tcp://*:4444");
-
-		phc.reset(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4));
 	}
 
 	~pHashComputeTest() {
