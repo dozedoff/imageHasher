@@ -8,7 +8,8 @@ option(BUILD_TESTS "Build and run unit tests" ON)
 
 #################################
 
-add_definitions(-std=c++11)
+set(CMAKE_CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED ON)
 
 # Add additional cmake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
