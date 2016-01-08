@@ -11,25 +11,25 @@
 #include "zmq.hpp"
 #include <GraphicsMagick/Magick++.h>
 #include <GraphicsMagick/magick/image.h>
+#include <memory>
 
 class pHashComputeTest {
 protected:
 	std::unique_ptr<imageHasher::pHashCompute> phc;
 
-	zmq::context_t *context;
-	zmq::socket_t *pull_socket, *push_socket;
+	std::unique_ptr<zmq::context_t> context;
+	std::unique_ptr<zmq::socket_t> pull_socket;
+	std::unique_ptr<zmq::socket_t> push_socket;
 
 	pHashComputeTest()
 	:
-	phc(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4))
+	phc(new imageHasher::pHashCompute("127.0.0.1",4444,5555,4)),
+	context(new zmq::context_t()),
+	pull_socket(new zmq::socket_t(*context, ZMQ_PULL)),
+	push_socket(new zmq::socket_t(*context, ZMQ_PUSH))
 	{
 		Magick::InitializeMagick(NULL);
-		context = new zmq::context_t(1);
-
-		pull_socket = new zmq::socket_t(*context, ZMQ_PULL);
 		pull_socket->bind("tcp://*:5555");
-
-		push_socket = new zmq::socket_t(*context, ZMQ_PUSH);
 		push_socket->bind("tcp://*:4444");
 	}
 
@@ -37,11 +37,6 @@ protected:
 		push_socket->close();
 		pull_socket->close();
 		context->close();
-
-		phc.reset();
-		delete(push_socket);
-		delete(pull_socket);
-		delete(context);
 	}
 
 	void send_message(unsigned int job_id, const void* data, int data_length);

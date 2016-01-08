@@ -26,11 +26,11 @@ const std::string pHashCompute::worker_ready_socket = "inproc://workerready";
 
 pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remote_pull_port, int workers)
 :
-  context(new zmq::context_t(1)),
-  worker_push(new zmq::socket_t(*(this->context), ZMQ_PUSH)),
-  worker_pull(new zmq::socket_t(*(this->context), ZMQ_PULL)),
-  worker_ready(new zmq::socket_t(*(this->context), ZMQ_PULL)),
-  client_pull(new zmq::socket_t(*(this->context), ZMQ_PULL))
+  context(new zmq::context_t()),
+  worker_push(new zmq::socket_t(*context, ZMQ_PUSH)),
+  worker_pull(new zmq::socket_t(*context, ZMQ_PULL)),
+  worker_ready(new zmq::socket_t(*context, ZMQ_PULL)),
+  client_pull(new zmq::socket_t(*context, ZMQ_PULL))
   {
 	if(workers < 1) {
                 throw std::runtime_error("Number of threads must be 1 or greater");
