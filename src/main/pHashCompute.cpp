@@ -30,7 +30,8 @@ pHashCompute::pHashCompute(std::string server_ip, int remote_push_port, int remo
   worker_push(new zmq::socket_t(*context, ZMQ_PUSH)),
   worker_pull(new zmq::socket_t(*context, ZMQ_PULL)),
   worker_ready(new zmq::socket_t(*context, ZMQ_PULL)),
-  client_pull(new zmq::socket_t(*context, ZMQ_PULL))
+  client_pull(new zmq::socket_t(*context, ZMQ_PULL)),
+  client_push(new zmq::socket_t(*context, ZMQ_PUSH))
   {
 	if(workers < 1) {
                 throw std::runtime_error("Number of threads must be 1 or greater");
@@ -56,7 +57,6 @@ void pHashCompute::setup_sockets(std::string ip, int remote_push_port, int remot
 	}
 	BOOST_LOG_SEV(logger,info)<<"Connected to remote server " << pull_addr << " for pulling tasks";
 
-	this->client_push.reset(new zmq::socket_t(*(this->context), ZMQ_PUSH));
 	this->client_push->connect(push_addr.c_str());
 
 	if(!this->client_push->connected()) {
