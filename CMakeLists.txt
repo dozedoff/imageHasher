@@ -34,7 +34,7 @@ add_subdirectory(commoncpp)
 # Collect source files
 file(GLOB_RECURSE tests src/test/*.cpp)
 file(GLOB odbtablesrc src/main/table/*.c*)
-file(GLOB ihcommonsrc src/main/*.cpp)
+file(GLOB ihcommonsrc src/main/*.cpp src/main/msg/*.cpp)
 
 # Include additional header files
 include_directories(src/main)
