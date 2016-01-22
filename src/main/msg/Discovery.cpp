@@ -8,8 +8,11 @@
 #include <msg/Discovery.hpp>
 #include <sstream>
 #include <memory>
+#include <boost/array.hpp>
 
 using namespace boost::log::trivial;
+using namespace boost::asio;
+using namespace boost::asio::ip;
 
 namespace imageHasher {
 namespace msg {
@@ -76,6 +79,24 @@ zmq::message_t Discovery::create_request_msg(
 	return msg;
 }
 
+void Discovery::broadcast(request_t request) {
+	boost::system::error_code error_code;
+	udp::socket socket(io_service);
+	socket.open(udp::v4());
+
+	socket.set_option(udp::socket::reuse_address(true));
+	socket.set_option(socket_base::broadcast(true));
+
+	udp::endpoint receiver_endpoint(ip::address_v4::broadcast(), 9000);
+
+
+	boost::array<request_t, 1> send_buf = { {request_t::hello} };
+	socket.send_to(boost::asio::buffer(send_buf), receiver_endpoint);
+
+	socket.close();
+}
+
 } /* namespace msg */
 } /* namespace imageHasher */
+
 

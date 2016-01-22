@@ -12,6 +12,7 @@
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <boost/asio.hpp>
 #include <cstdint>
 
 namespace imageHasher {
@@ -33,6 +34,7 @@ public:
 	void query_service(service_t type);
 
 	void send_heartbeat();
+	void broadcast(request_t request);
 
 private:
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
@@ -45,6 +47,8 @@ private:
 	std::string create_address(std::string prefix, std::string ip, int port);
 	zmq::message_t create_service_msg(const service_t &service);
 	zmq::message_t create_request_msg(const request_t &request);
+
+	boost::asio::io_service io_service;
 };
 
 } /* namespace msg */

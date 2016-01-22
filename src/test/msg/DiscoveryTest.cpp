@@ -10,6 +10,7 @@
 #include "zmq.hpp"
 #include <memory>
 #include <boost/asio.hpp>
+#include <boost/array.hpp>
 
 using imageHasher::msg::Discovery;
 using namespace boost::log::trivial;
@@ -33,8 +34,10 @@ protected:
 		request(new zmq::socket_t(*context,ZMQ_REP)),
 		publisher(new zmq::socket_t(*context,ZMQ_PUB)),
 		cut(new imageHasher::msg::Discovery("127.0.0.1", 5555)),
-		socket(service, ip::udp::endpoint(ip::udp::v4(), 9000))
+		socket(service, ip::udp::endpoint(ip::address_v4::any(), 9000))
 	{
+		socket.set_option(socket_base::broadcast(true));
+
 		request->bind("tcp://*:5555");
 		publisher->bind("tcp://*:4444");
 		cut->connect("127.0.0.1", 5555);
@@ -70,6 +73,17 @@ TEST_CASE_METHOD(DiscoveryTest, "Register Service", "[DirectoryTest]") {
 	memcpy(&service_msg, msg2.data(), sizeof(Discovery::service_t));
 
 	CHECK(service_msg == Discovery::service_t::compute);
+}
+
+TEST_CASE_METHOD(DiscoveryTest, "Broadcast", "[DirectoryTest]") {
+	boost::array<Discovery::request_t, 1> rcv_buf;
+
+	cut->broadcast(Discovery::request_t::hello);
+	ip::udp::endpoint sender;
+	int in = socket.receive_from(boost::asio::buffer(rcv_buf), sender);
+
+	CHECK(in == 1);
+	REQUIRE(rcv_buf.at(0) == Discovery::request_t::hello);
 }
 
 
