@@ -30,6 +30,8 @@ include(CodeCoverage)
 # Add depdency project
 add_subdirectory(commoncpp)
 
+#Generate ODB files
+EXECUTE_PROCESS( COMMAND sh ${CMAKE_SOURCE_DIR}/generate-tables.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Collect source files
 file(GLOB_RECURSE tests src/test/*.cpp)
