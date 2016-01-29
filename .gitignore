@@ -5,3 +5,9 @@
 .cproject
 .project
 .settings/
+
+
+# ODB generated files
+src/main/table/*.cxx
+src/main/table/*.ixx
+src/main/table/*.hxx
