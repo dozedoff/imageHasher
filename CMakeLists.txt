@@ -49,6 +49,7 @@ find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
 find_library(zmq zmq)
 find_library(sqlite sqlite3)
+find_library(avahi avahi-client)
 
 ## Find packages
 
@@ -70,7 +71,7 @@ add_executable(computeClient src/pHashComputeClient.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite} ${sqlite})
-target_link_libraries(ihcommon commoncpp odbtable ${zmq} ${Boost_LIBRARIES})
+target_link_libraries(ihcommon commoncpp odbtable ${avahi} ${zmq} ${Boost_LIBRARIES})
 
 target_link_libraries(imageHasher ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
