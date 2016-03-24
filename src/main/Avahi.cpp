@@ -101,7 +101,7 @@ const char* Avahi::get_error_msg() {
 
 bool Avahi::add_service(std::string name, std::string type, uint16_t port) {
 	lock_poll();
-	avahi_entry_group_add_service_strlst(this->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,(AvahiPublishFlags)0, "foobar", "_ipp._tcp", "homenet", "localhost", port, nullptr);
+	avahi_entry_group_add_service_strlst(this->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,(AvahiPublishFlags)0, name.c_str(), type.c_str(), nullptr, nullptr, port, nullptr);
 	unlock_poll();
 	return true;
 }
