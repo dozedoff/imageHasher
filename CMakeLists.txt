@@ -49,7 +49,8 @@ find_library(odb odb)
 find_library(odbsqlite odb-sqlite)
 find_library(zmq zmq)
 find_library(sqlite sqlite3)
-find_library(avahi avahi-client)
+find_library(avahi-client avahi-client)
+find_library(avahi-common avahi-common)
 
 ## Find packages
 
@@ -68,14 +69,18 @@ add_library(ihcommon ${ihcommonsrc})
 add_executable(imageHasher src/ImageHasher.cpp)
 add_executable(hashUtil src/HashUtil.cpp)
 add_executable(computeClient src/pHashComputeClient.cpp)
+add_executable (test_bin ${tests})
+add_executable (exam src/exam.cpp)
 
 # Linking
 target_link_libraries(odbtable ${odb} ${odbsqlite} ${sqlite})
-target_link_libraries(ihcommon commoncpp odbtable ${avahi} ${zmq} ${Boost_LIBRARIES})
+target_link_libraries(ihcommon commoncpp odbtable ${avahi-client} ${zmq} ${Boost_LIBRARIES})
 
 target_link_libraries(imageHasher ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(hashUtil ihcommon commoncpp ${Boost_LIBRARIES})
 target_link_libraries(computeClient ihcommon commoncpp ${Boost_LIBRARIES})
+target_link_libraries(test_bin ihcommon)
+target_link_libraries(exam ${avahi-client} ${avahi-common})
 
 # Only build tests if the option is selected
 if(BUILD_TESTS)
