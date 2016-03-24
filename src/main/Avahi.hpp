@@ -18,12 +18,17 @@
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
 
+
 #include <avahi-common/alternative.h>
 #include <avahi-common/simple-watch.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
 #include <avahi-common/timeval.h>
+
 #include <avahi-common/thread-watch.h>
+
+#include <boost/log/trivial.hpp>
+#include <boost/log/sources/severity_logger.hpp>
 
 namespace imageHasher {
 namespace discovery {
@@ -35,9 +40,16 @@ public:
 	bool is_running();
 
 private:
+	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
+
 	AvahiEntryGroup *group;
 	AvahiClient *client;
 	AvahiThreadedPoll *threaded_poll;
+
+	static void entry_group_callback(AvahiEntryGroup *group, AvahiEntryGroupState state, void *userdata);
+
+	const char * get_error_msg();
+	static const char * error_msg_lookup(AvahiClient *client);
 };
 
 } /* namespace discovery */
