@@ -29,6 +29,7 @@
 
 #include <boost/log/trivial.hpp>
 #include <boost/log/sources/severity_logger.hpp>
+#include <inttypes.h>
 
 namespace imageHasher {
 namespace discovery {
@@ -38,6 +39,7 @@ public:
 	Avahi();
 	virtual ~Avahi();
 	bool is_running();
+	bool add_service(std::string name, std::string type, uint16_t port);
 
 private:
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;
@@ -50,6 +52,8 @@ private:
 
 	const char * get_error_msg();
 	static const char * error_msg_lookup(AvahiClient *client);
+	void lock_poll();
+	void unlock_poll();
 };
 
 } /* namespace discovery */

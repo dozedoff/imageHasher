@@ -29,3 +29,7 @@ TEST_CASE_METHOD(AvahiTestFixture, "Avahi construction", "[AvahiTest]") {
 TEST_CASE_METHOD(AvahiTestFixture, "Avahi running", "[AvahiTest]") {
 	REQUIRE(cut->is_running());
 }
+
+TEST_CASE_METHOD(AvahiTestFixture, "Avahi add service", "[AvahiTest]") {
+	REQUIRE(cut->add_service("test", "_ipp._tcp", 5566));
+}
