@@ -122,6 +122,19 @@ inline void Avahi::lock_poll() {
 	avahi_threaded_poll_lock(this->threaded_poll);
 }
 
+bool Avahi::commit() {
+	int ret;
+	lock_poll();
+			ret = avahi_entry_group_commit(this->group);
+	unlock_poll();
+
+	if (ret == AVAHI_OK) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 inline void Avahi::unlock_poll() {
 	avahi_threaded_poll_unlock(this->threaded_poll);
 }

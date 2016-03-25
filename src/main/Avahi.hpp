@@ -40,6 +40,7 @@ public:
 	virtual ~Avahi();
 	bool is_running();
 	bool add_service(std::string name, std::string type, uint16_t port);
+	bool commit();
 
 private:
 	boost::log::sources::severity_logger<boost::log::trivial::severity_level> logger;

@@ -33,3 +33,8 @@ TEST_CASE_METHOD(AvahiTestFixture, "Avahi running", "[AvahiTest]") {
 TEST_CASE_METHOD(AvahiTestFixture, "Avahi add service", "[AvahiTest]") {
 	REQUIRE(cut->add_service("test", "_ipp._tcp", 5566));
 }
+
+TEST_CASE_METHOD(AvahiTestFixture, "Avahi commit", "[AvahiTest]") {
+	REQUIRE(cut->add_service("test2", "_ipp._tcp", 5567));
+	REQUIRE(cut->commit());
+}
