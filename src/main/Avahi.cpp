@@ -100,10 +100,18 @@ const char* Avahi::get_error_msg() {
 }
 
 bool Avahi::add_service(std::string name, std::string type, uint16_t port) {
+	int ret;
+
 	lock_poll();
-	avahi_entry_group_add_service_strlst(this->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,(AvahiPublishFlags)0, name.c_str(), type.c_str(), nullptr, nullptr, port, nullptr);
+		ret = avahi_entry_group_add_service_strlst(this->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC,AVAHI_PUBLISH_UPDATE, name.c_str(), type.c_str(), nullptr, nullptr, port, nullptr);
 	unlock_poll();
-	return true;
+
+	if(ret == AVAHI_OK) {
+		return true;
+	}else {
+		BOOST_LOG_SEV(logger, error) << "Failed to add service: " << avahi_strerror(ret);
+		return false;
+	}
 }
 
 inline const char* Avahi::error_msg_lookup(AvahiClient* client) {
